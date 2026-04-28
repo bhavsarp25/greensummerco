@@ -1,4 +1,13 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Component,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ErrorInfo,
+  type ReactNode,
+} from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {
   Bounds,
@@ -150,20 +159,9 @@ export function InteractiveLogo({
     };
   }, [candidates.join('|')]);
 
-  if (resolvedSrc === undefined) {
-    return <PlaceholderLogo dim />;
-  }
-
-  if (resolvedSrc === null) {
-    return <PlaceholderLogo />;
-  }
-
-  // Shared, mutable reference to the normalised cursor position
-  // (-1 .. +1 on each axis, where (0,0) is the centre of the viewport).
-  // Updated synchronously by a window-level pointermove listener so the
-  // model tracks the user's cursor wherever it is on the page, not just
-  // when it's hovering the canvas. A ref (not state) so we don't re-render
-  // every frame.
+  // NOTE: All hooks must run unconditionally on every render. Don't return
+  // early above this point — moving any hook below a conditional return
+  // produces "Rendered fewer hooks than expected" and crashes the page.
   const pointerRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -175,7 +173,16 @@ export function InteractiveLogo({
     return () => window.removeEventListener('pointermove', onMove);
   }, []);
 
+  if (resolvedSrc === undefined) {
+    return <PlaceholderLogo dim />;
+  }
+
+  if (resolvedSrc === null) {
+    return <PlaceholderLogo />;
+  }
+
   return (
+    <CanvasErrorBoundary fallback={<PlaceholderLogo />}>
     <div className="w-full h-full">
       <Canvas
         camera={{ position: [0, 0, 8], fov: 40 }}
@@ -214,7 +221,24 @@ export function InteractiveLogo({
         </Suspense>
       </Canvas>
     </div>
+    </CanvasErrorBoundary>
   );
+}
+
+class CanvasErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[InteractiveLogo] canvas error, falling back:', error, info);
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
 }
 
 function Model({
@@ -366,97 +390,114 @@ function Model({
  * the model was exported in — we use the world-space normal averaged
  * across each triangle's three vertices.
  */
+/**
+ * Marker stashed on a geometry the first time we partition it, so that
+ * StrictMode double-invocations and HMR re-runs reuse the same partition
+ * instead of re-mutating the (cached, shared) geometry.
+ */
+type PartitionedGeometry = BufferGeometry & {
+  __extrudedPartitioned?: { paintCount: number; edgeCount: number };
+};
+
 function applyExtrudedMaterials(
   mesh: Mesh,
   paintMaterial: MeshStandardMaterial,
   edgeMaterial: MeshStandardMaterial,
   threshold: number,
 ) {
-  const geometry = mesh.geometry as BufferGeometry;
-  if (!geometry.attributes.position) return;
+  try {
+    const geometry = mesh.geometry as PartitionedGeometry | undefined;
+    if (!geometry || !geometry.attributes?.position) return;
 
-  // Bake any local transform into vertex positions so face normals are
-  // computed in the same frame regardless of how the GLTF is parented.
-  geometry.applyMatrix4(mesh.matrixWorld);
-  mesh.matrix.identity();
-  mesh.position.set(0, 0, 0);
-  mesh.rotation.set(0, 0, 0);
-  mesh.scale.set(1, 1, 1);
-  mesh.updateMatrix();
+    // useGLTF caches the parsed scene, so this geometry is shared across
+    // re-renders (and across StrictMode double-invocations). Partition
+    // the index buffer ONCE and remember it on the geometry itself; on
+    // any subsequent run, just rebind the materials.
+    const cached = geometry.__extrudedPartitioned;
+    if (cached) {
+      geometry.clearGroups();
+      geometry.addGroup(0, cached.paintCount, 0);
+      geometry.addGroup(cached.paintCount, cached.edgeCount, 1);
+      mesh.material = [paintMaterial, edgeMaterial];
+      return;
+    }
 
-  if (!geometry.index) {
-    geometry.setIndex(buildSequentialIndex(geometry.attributes.position.count));
+    const positions = geometry.attributes.position;
+    const px = positions.array as ArrayLike<number>;
+    const vertexCount = positions.count;
+
+    // Ensure an index buffer exists. Without one, "indexed triangles"
+    // fall through to sequential indexing.
+    if (!geometry.index) {
+      const Ctor = vertexCount > 65535 ? Uint32Array : Uint16Array;
+      const seq = new Ctor(vertexCount);
+      for (let i = 0; i < vertexCount; i++) seq[i] = i;
+      geometry.setIndex(new BufferAttribute(seq, 1));
+    }
+
+    const idx = geometry.index!.array as ArrayLike<number>;
+    const triCount = (idx.length / 3) | 0;
+    if (triCount === 0) return;
+
+    geometry.computeBoundingBox();
+    const bb = geometry.boundingBox!;
+    const span = {
+      x: bb.max.x - bb.min.x,
+      y: bb.max.y - bb.min.y,
+      z: bb.max.z - bb.min.z,
+    };
+    const extrudeAxis: 0 | 1 | 2 =
+      span.z <= span.x && span.z <= span.y ? 2 : span.y <= span.x ? 1 : 0;
+
+    const paintIdx: number[] = [];
+    const edgeIdx: number[] = [];
+
+    for (let t = 0; t < triCount; t++) {
+      const i0 = t * 3;
+      const a = idx[i0] * 3;
+      const b = idx[i0 + 1] * 3;
+      const c = idx[i0 + 2] * 3;
+      const ex1 = px[b] - px[a];
+      const ey1 = px[b + 1] - px[a + 1];
+      const ez1 = px[b + 2] - px[a + 2];
+      const ex2 = px[c] - px[a];
+      const ey2 = px[c + 1] - px[a + 1];
+      const ez2 = px[c + 2] - px[a + 2];
+      const nx = ey1 * ez2 - ez1 * ey2;
+      const ny = ez1 * ex2 - ex1 * ez2;
+      const nz = ex1 * ey2 - ey1 * ex2;
+      const len = Math.hypot(nx, ny, nz) || 1;
+      const axisComp =
+        extrudeAxis === 0 ? nx / len : extrudeAxis === 1 ? ny / len : nz / len;
+      const target = Math.abs(axisComp) >= threshold ? paintIdx : edgeIdx;
+      target.push(idx[i0], idx[i0 + 1], idx[i0 + 2]);
+    }
+
+    const totalLen = paintIdx.length + edgeIdx.length;
+    const Ctor = vertexCount > 65535 ? Uint32Array : Uint16Array;
+    const merged = new Ctor(totalLen);
+    for (let i = 0; i < paintIdx.length; i++) merged[i] = paintIdx[i];
+    for (let i = 0; i < edgeIdx.length; i++) {
+      merged[paintIdx.length + i] = edgeIdx[i];
+    }
+
+    geometry.setIndex(new BufferAttribute(merged, 1));
+    geometry.clearGroups();
+    geometry.addGroup(0, paintIdx.length, 0);
+    geometry.addGroup(paintIdx.length, edgeIdx.length, 1);
+    geometry.__extrudedPartitioned = {
+      paintCount: paintIdx.length,
+      edgeCount: edgeIdx.length,
+    };
+
+    mesh.material = [paintMaterial, edgeMaterial];
+  } catch (err) {
+    // If anything goes sideways, fall back to a single-material render
+    // so the page still loads instead of taking down the whole React
+    // tree with a render error.
+    console.error('[InteractiveLogo] extruded material split failed:', err);
+    mesh.material = paintMaterial;
   }
-  geometry.computeVertexNormals();
-
-  const index = geometry.index!;
-  const indexArray = index.array as ArrayLike<number>;
-  const triCount = indexArray.length / 3;
-
-  const positions = geometry.attributes.position;
-  const px = positions.array as ArrayLike<number>;
-
-  // Find the dominant axis by inspecting the AABB. 3DLogoLab extrudes
-  // along the shortest axis; classifying "is this triangle facing the
-  // extrusion axis" generalises to any orientation the model arrived in.
-  geometry.computeBoundingBox();
-  const bb = geometry.boundingBox!;
-  const span = {
-    x: bb.max.x - bb.min.x,
-    y: bb.max.y - bb.min.y,
-    z: bb.max.z - bb.min.z,
-  };
-  const extrudeAxis: 0 | 1 | 2 =
-    span.z <= span.x && span.z <= span.y ? 2 : span.y <= span.x ? 1 : 0;
-
-  // Reorder indices so all "paint" triangles come first, then all "edge"
-  // triangles — that way we can describe the split as two contiguous
-  // material groups.
-  const paintIdx: number[] = [];
-  const edgeIdx: number[] = [];
-
-  const ax = (i: number, k: number) => px[indexArray[i] * 3 + k];
-
-  for (let t = 0; t < triCount; t++) {
-    const i0 = t * 3;
-    // Compute triangle normal via cross product of two edges.
-    const ax0 = ax(i0, 0), ay0 = ax(i0, 1), az0 = ax(i0, 2);
-    const ax1 = ax(i0 + 1, 0), ay1 = ax(i0 + 1, 1), az1 = ax(i0 + 1, 2);
-    const ax2 = ax(i0 + 2, 0), ay2 = ax(i0 + 2, 1), az2 = ax(i0 + 2, 2);
-    const ex1 = ax1 - ax0, ey1 = ay1 - ay0, ez1 = az1 - az0;
-    const ex2 = ax2 - ax0, ey2 = ay2 - ay0, ez2 = az2 - az0;
-    const nx = ey1 * ez2 - ez1 * ey2;
-    const ny = ez1 * ex2 - ex1 * ez2;
-    const nz = ex1 * ey2 - ey1 * ex2;
-    const len = Math.hypot(nx, ny, nz) || 1;
-    const axisComponent =
-      extrudeAxis === 0 ? nx / len : extrudeAxis === 1 ? ny / len : nz / len;
-
-    const arr = Math.abs(axisComponent) >= threshold ? paintIdx : edgeIdx;
-    arr.push(indexArray[i0], indexArray[i0 + 1], indexArray[i0 + 2]);
-  }
-
-  const totalLen = paintIdx.length + edgeIdx.length;
-  const useUint32 = totalLen > 65535 || (positions.count > 65535);
-  const Ctor = useUint32 ? Uint32Array : Uint16Array;
-  const merged = new Ctor(totalLen);
-  for (let i = 0; i < paintIdx.length; i++) merged[i] = paintIdx[i];
-  for (let i = 0; i < edgeIdx.length; i++) merged[paintIdx.length + i] = edgeIdx[i];
-
-  geometry.setIndex(new BufferAttribute(merged, 1));
-
-  geometry.clearGroups();
-  geometry.addGroup(0, paintIdx.length, 0);
-  geometry.addGroup(paintIdx.length, edgeIdx.length, 1);
-
-  mesh.material = [paintMaterial, edgeMaterial];
-}
-
-function buildSequentialIndex(count: number) {
-  const Ctor = count > 65535 ? Uint32Array : Uint16Array;
-  const arr = new Ctor(count);
-  for (let i = 0; i < count; i++) arr[i] = i;
-  return new BufferAttribute(arr, 1);
 }
 
 function LoaderHtml() {
