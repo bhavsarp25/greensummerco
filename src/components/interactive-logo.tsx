@@ -114,11 +114,11 @@ export function InteractiveLogo({
   maxPitchDeg = 15,
   followSpeed = 0.08,
   tint = '#557042',
-  roughness = 0.38,
-  metalness = 0.08,
+  roughness = 0.55,
+  metalness = 0.25,
   override = 'extruded',
   edgeColor = '#f0f0f0',
-  edgeRoughness = 0.16,
+  edgeRoughness = 0.18,
   edgeMetalness = 1.0,
   edgeAngleThreshold = 0.55,
 }: InteractiveLogoProps) {
@@ -189,10 +189,13 @@ export function InteractiveLogo({
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
-        <ambientLight intensity={0.32} />
-        <directionalLight position={[5, 6, 5]} intensity={0.75} />
-        <directionalLight position={[-5, 2, 3]} intensity={0.4} />
-        <directionalLight position={[0, -3, -4]} intensity={0.18} />
+        {/* Low ambient keeps the green saturated; a bright key from above
+            and a small rim from behind give the extruded edges definition
+            without blowing out the painted face. */}
+        <ambientLight intensity={0.22} />
+        <directionalLight position={[4, 6, 6]} intensity={1.15} castShadow />
+        <directionalLight position={[-6, 2, 4]} intensity={0.55} />
+        <directionalLight position={[0, -2, -5]} intensity={0.5} color="#bcd3a8" />
 
         <Suspense fallback={<LoaderHtml />}>
           {/* <Bounds> auto-fits the camera to whatever size the model is,
@@ -217,7 +220,12 @@ export function InteractiveLogo({
               />
             </Center>
           </Bounds>
-          <Environment preset="apartment" environmentIntensity={0.55} />
+          {/* 'studio' HDRI has the strongest specular highlights of the
+              built-in presets — which is what brings out the chrome on
+              the extrusion edges and the slight sheen on the painted
+              face. environmentIntensity dials its overall contribution
+              so it doesn't fight the directional rig above. */}
+          <Environment preset="studio" environmentIntensity={0.7} />
         </Suspense>
       </Canvas>
     </div>
