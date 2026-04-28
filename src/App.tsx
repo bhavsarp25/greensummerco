@@ -4,6 +4,7 @@ import { ClientsSection } from './components/clients-section';
 import { ClientDetail } from './components/client-detail';
 import { LogoLanding } from './components/logo-landing';
 import { Reveal } from './components/reveal';
+import { ConvergingHeadline, GrowingVine } from './components/scroll-effects';
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,35 +94,29 @@ export default function App() {
         </div>
       </nav>
 
+      {/* Decorative vine that draws itself as the user scrolls from the
+          landing into the early content. Sits behind everything except
+          the wallpaper iframe. */}
+      <GrowingVine start={0.02} end={0.35} side="left" />
+
       {/* Page 1: Landing — interactive 3D logo, full viewport, scroll-down hint */}
       <LogoLanding scrollTargetId="hero" />
 
-      {/* Page 2: Hero — GROW BOLDLY. THRIVE DIGITALLY. */}
-      <section
+      {/* Page 2: Hero — GROW BOLDLY. THRIVE DIGITALLY. with character
+          convergence on scroll-in. */}
+      <ConvergingHeadline
         id="hero"
-        className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-[#D8CDB1]/20 via-white to-white"
-      >
-        <Reveal from="up" delay={50}>
-          <h1 className="text-5xl md:text-7xl text-center mb-6 leading-[1.05]">
-            <span className="text-[#557042]">GROW BOLDLY.</span>
-            <br />
-            <span className="text-gray-800">THRIVE DIGITALLY.</span>
-          </h1>
-        </Reveal>
-        <Reveal from="up" delay={250}>
-          <p className="text-gray-600 text-center max-w-2xl text-lg md:text-xl">
-            Your partners in lasting digital prosperity
-          </p>
-        </Reveal>
-        <Reveal from="up" delay={450}>
-          <button
-            onClick={() => scrollToSection('contact')}
-            className="mt-10 px-10 py-4 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors text-lg shadow-md hover:shadow-lg"
-          >
-            Let's Grow Together
-          </button>
-        </Reveal>
-      </section>
+        eyebrow="Welcome to Green Summer Collective"
+        lines={[
+          { text: 'GROW BOLDLY.', color: 'primary' },
+          { text: 'THRIVE DIGITALLY.', color: 'secondary' },
+        ]}
+        subtitle="Your partners in lasting digital prosperity."
+        cta={{
+          label: "Let's Grow Together",
+          onClick: () => scrollToSection('contact'),
+        }}
+      />
 
       {/* About Section */}
       <section id="about" className="py-24 px-6 bg-white">
