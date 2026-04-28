@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Veil — Shader Wallpaper</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #D8CDB1; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    #__bundler_loading { position: fixed; bottom: 20px; right: 20px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: #666; background: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 10000; }
+    #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #D8CDB1; z-index: 9999; }
+    #__bundler_thumbnail svg { width: 100%; height: 100%; object-fit: contain; }
+    #__bundler_placeholder { color: #999; font-size: 14px; }
+  </style>
+  <noscript>
+    <style>#__bundler_loading { display: none; }</style>
+    <div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;color:#999;background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);z-index:10000;">
+      This page requires JavaScript to display.
+    </div>
+  </noscript>
+</head>
+<body>
+  <div id="__bundler_thumbnail">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#D8CDB1"></rect>
+    <ellipse cx="400" cy="380" rx="320" ry="200" fill="#c8bda0" opacity="0.5"></ellipse>
+    <ellipse cx="800" cy="420" rx="260" ry="160" fill="#e8dfc8" opacity="0.45"></ellipse>
+    <ellipse cx="620" cy="300" rx="180" ry="120" fill="#f5f0e6" opacity="0.3"></ellipse>
+  </svg>
+</div>
+  <div id="__bundler_loading">Unpacking...</div>
+
+  <script>
+    
+document.addEventListener('DOMContentLoaded', async function() {
+  const loading = document.getElementById('__bundler_loading');
+  function setStatus(msg) { if (loading) loading.textContent = msg; }
+
+  // Error sink persists across replaceWith since it's on window, not the DOM.
+  window.addEventListener('error', function(e) {
+    var p = document.body || document.documentElement;
+    var d = document.getElementById('__bundler_err') || p.appendChild(document.createElement('div'));
+    d.id = '__bundler_err';
+    d.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;font:12px/1.4 ui-monospace,monospace;background:#2a1215;color:#ff8a80;padding:10px 14px;border-radius:8px;border:1px solid #5c2b2e;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto';
+    d.textContent = (d.textContent ? d.textContent + String.fromCharCode(10) : '') +
+      '[bundle] ' + (e.message || e.type) +
+      (e.filename ? ' (' + e.filename.slice(0, 60) + ':' + e.lineno + ')' : '');
+  }, true);
+
+  try {
+    const manifestEl = document.querySelector('script[type="__bundler/manifest"]');
+    const templateEl = document.querySelector('script[type="__bundler/template"]');
+    if (!manifestEl || !templateEl) {
+      setStatus('Error: missing bundle data');
+      console.error('[bundler] Missing script tags — manifestEl:', !!manifestEl, 'templateEl:', !!templateEl);
+      return;
+    }
+
+    const manifest = JSON.parse(manifestEl.textContent);
+    let template = JSON.parse(templateEl.textContent);
+
+    const uuids = Object.keys(manifest);
+    setStatus('Unpacking ' + uuids.length + ' assets...');
+
+    const blobUrls = {};
+    await Promise.all(uuids.map(async (uuid) => {
+      const entry = manifest[uuid];
+      try {
+        const binaryStr = atob(entry.data);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+        let finalBytes = bytes;
+        if (entry.compressed) {
+          if (typeof DecompressionStream !== 'undefined') {
+            const ds = new DecompressionStream('gzip');
+            const writer = ds.writable.getWriter();
+            const reader = ds.readable.getReader();
+            writer.write(bytes);
+            writer.close();
+            const chunks = [];
+            let totalLen = 0;
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+              totalLen += value.length;
+            }
+            finalBytes = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of chunks) { finalBytes.set(chunk, offset); offset += chunk.length; }
+          } else {
+            console.warn('DecompressionStream not available, asset ' + uuid + ' may not render');
+          }
+        }
+
+        blobUrls[uuid] = URL.createObjectURL(new Blob([finalBytes], { type: entry.mime }));
+      } catch (err) {
+        console.error('Failed to decode asset ' + uuid + ':', err);
+        blobUrls[uuid] = URL.createObjectURL(new Blob([], { type: entry.mime }));
+      }
+    }));
+
+    const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
+    const extResources = extResEl ? JSON.parse(extResEl.textContent) : [];
+    const resourceMap = {};
+    for (const entry of extResources) {
+      if (blobUrls[entry.uuid]) resourceMap[entry.id] = blobUrls[entry.uuid];
+    }
+
+    setStatus('Rendering...');
+    for (const uuid of uuids) template = template.split(uuid).join(blobUrls[uuid]);
+
+    // Strip integrity + crossorigin — blob URLs from a file:// document inherit
+    // a null origin, so crossorigin forces a CORS fetch that SRI then rejects.
+    // The manifest bytes are ours; SRI protects against CDN compromise, not this.
+    template = template.replace(/\s+integrity="[^"]*"/gi, '').replace(/\s+crossorigin="[^"]*"/gi, '');
+
+    const resourceScript = '<script>window.__resources = ' +
+      JSON.stringify(resourceMap).split('</' + 'script>').join('<\\/' + 'script>') +
+      ';</' + 'script>';
+    // Inject after <head> so the DOCTYPE stays first; prepending the script
+    // would push the parser into quirks mode. DOMParser always emits a <head>
+    // (synthesizing one if the source HTML omitted it) but may carry
+    // attributes through, so match the full opening tag. slice() rather than
+    // replace() keeps us clear of $-pattern substitution in resourceScript.
+    const headOpen = template.match(/<head[^>]*>/i);
+    if (headOpen) {
+      const i = headOpen.index + headOpen[0].length;
+      template = template.slice(0, i) + resourceScript + template.slice(i);
+    }
+
+    // Parse the template and swap the root element. Scripts inserted via
+    // DOMParser/replaceWith are inert per spec — re-create each with
+    // createElement so they execute, awaiting onload for src scripts to
+    // preserve ordering (React before ReactDOM before Babel before text/babel).
+    const doc = new DOMParser().parseFromString(template, 'text/html');
+    document.documentElement.replaceWith(doc.documentElement);
+    const dead = Array.from(document.scripts);
+    for (const old of dead) {
+      const s = document.createElement('script');
+      for (const a of old.attributes) s.setAttribute(a.name, a.value);
+      s.textContent = old.textContent;
+      // text/babel scripts with a src: fetch and inline. transformScriptTags
+      // does XHR against the src, but blob:null/ from a file:// origin is
+      // silently dropped. Inlining makes it a plain inline babel script,
+      // which transformScriptTags handles unconditionally.
+      if ((s.type === 'text/babel' || s.type === 'text/jsx') && s.src) {
+        const r = await fetch(s.src);
+        s.textContent = await r.text();
+        s.removeAttribute('src');
+      }
+      const p = s.src ? new Promise(function(r) { s.onload = s.onerror = r; }) : null;
+      old.replaceWith(s);
+      if (p) await p;
+    }
+    // Babel standalone auto-transforms type=text/babel on DOMContentLoaded,
+    // which fired before we swapped the document. Trigger manually if present.
+    if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
+      window.Babel.transformScriptTags();
+    }
+  } catch (err) {
+    setStatus('Error unpacking: ' + err.message);
+    console.error('Bundle unpack error:', err);
+  }
+});
+
+  </script>
+
+  <script type="__bundler/manifest">
+{}
+  </script>
+
+  <script type="__bundler/ext_resources">
+[]
+  </script>
+
+  <script type="__bundler/template">
+"<!DOCTYPE html>\n<html lang=\"en\"><head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Veil — Shader Wallpaper<\u002Ftitle>\n<style>\n  * { margin: 0; padding: 0; box-sizing: border-box; }\n  html, body { width: 100%; height: 100%; overflow: hidden; background: #D8CDB1; }\n  canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; }\n<\u002Fstyle>\n\n<\u002Fhead>\n<body>\n<canvas id=\"c\"><\u002Fcanvas>\n\n<script>\nconst canvas = document.getElementById('c');\nconst gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');\n\nif (!gl) {\n  document.body.style.background = '#D8CDB1';\n  throw 0;\n}\n\nconst VS = `\nattribute vec2 a_pos;\nvoid main(){ gl_Position = vec4(a_pos,0.0,1.0); }\n`;\n\nconst FS = `\nprecision highp float;\nuniform vec2  u_res;\nuniform float u_time;\n\n/* ── Smooth value noise ──────────────────────── */\nfloat h2(vec2 p){\n  p = fract(p * vec2(127.1, 311.7));\n  p += dot(p, p + 74.27);\n  return fract(p.x * p.y);\n}\nfloat n2(vec2 p){\n  vec2 i = floor(p); vec2 f = fract(p);\n  f = f*f*(3.0-2.0*f);\n  return mix(\n    mix(h2(i),        h2(i+vec2(1,0)), f.x),\n    mix(h2(i+vec2(0,1)), h2(i+vec2(1,1)), f.x), f.y);\n}\n/* Two octaves — intentionally simple */\nfloat bump(vec2 p){\n  float b  = n2(p*1.6  + u_time*0.025) * 0.62;\n        b += n2(p*3.2  - u_time*0.018 + vec2(4.1,2.3)) * 0.28;\n  return b + 0.05;\n}\n\n/* ── Minimal chrome shading — warm base, white glint ── */\nvec3 shade(vec3 N, vec3 L, vec3 V){\n  vec3 H   = normalize(L + V);\n  float d  = max(0.0, dot(N,L));\n  float s  = pow(max(0.0, dot(N,H)), 160.0);\n  float s2 = pow(max(0.0, dot(N,H)),  10.0) * 0.06;\n  float rim= pow(1.0 - max(0.0, dot(N,V)), 3.0) * 0.04;\n\n  /* Palette: sand dominant, white as pure specular accent */\n  vec3 sand  = vec3(0.847, 0.804, 0.694); /* #D8CDB1 */\n  vec3 light = vec3(0.91,  0.87,  0.79);  /* warm mid */\n  vec3 hi    = vec3(1.00,  0.99,  0.97);  /* near-white glint */\n  vec3 shadow= vec3(0.72,  0.68,  0.58);  /* warm dark, no black */\n\n  /* Diffuse between shadow and sand, then add specular in white */\n  vec3 col  = mix(shadow, sand, d*0.55 + 0.45);\n       col += light * s2;\n       col += hi    * s  * 0.85;\n       col += sand  * rim;\n\n  return col;\n}\n\nvoid main(){\n  vec2 uv = gl_FragCoord.xy / u_res;\n  float ar = u_res.x / u_res.y;\n  vec2 p   = vec2(uv.x * ar, uv.y);\n\n  float e  = 0.005;\n  float b  = bump(p);\n  float bx = bump(p + vec2(e, 0.0));\n  float by = bump(p + vec2(0.0, e));\n\n  vec3 N = normalize(vec3((bx-b)*1.6, (by-b)*1.6, e));\n\n  /* Fixed soft top-left light — no cursor */\n  vec3 L = normalize(vec3(-0.3 * ar, 0.55, 1.8));\n  vec3 V = vec3(0.0, 0.0, 1.0);\n\n  vec3 col = shade(N, L, V);\n  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);\n}\n`;\n\n/* ── Build program ────────────────────────────── */\nfunction mkShader(type, src){\n  const s = gl.createShader(type);\n  gl.shaderSource(s, src); gl.compileShader(s);\n  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){\n    console.error(gl.getShaderInfoLog(s)); return null;\n  }\n  return s;\n}\nconst prog = (() => {\n  const vs = mkShader(gl.VERTEX_SHADER,   VS);\n  const fs = mkShader(gl.FRAGMENT_SHADER, FS);\n  const p  = gl.createProgram();\n  gl.attachShader(p, vs); gl.attachShader(p, fs);\n  gl.linkProgram(p);\n  if(!gl.getProgramParameter(p, gl.LINK_STATUS)){\n    console.error(gl.getProgramInfoLog(p)); return null;\n  }\n  return p;\n})();\n\n/* ── Quad ─────────────────────────────────────── */\nconst buf = gl.createBuffer();\ngl.bindBuffer(gl.ARRAY_BUFFER, buf);\ngl.bufferData(gl.ARRAY_BUFFER,\n  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),\n  gl.STATIC_DRAW);\n\nconst uRes   = gl.getUniformLocation(prog, 'u_res');\nconst uTime  = gl.getUniformLocation(prog, 'u_time');\nconst aPos   = gl.getAttribLocation(prog,  'a_pos');\n\n/* ── Resize ───────────────────────────────────── */\nfunction resize(){\n  const dpr = Math.min(window.devicePixelRatio || 1, 2);\n  canvas.width  = Math.round(window.innerWidth  * dpr);\n  canvas.height = Math.round(window.innerHeight * dpr);\n  gl.viewport(0, 0, canvas.width, canvas.height);\n}\nresize();\nwindow.addEventListener('resize', resize);\n\n/* ── Render ───────────────────────────────────── */\nlet start = null;\nfunction render(ts){\n  requestAnimationFrame(render);\n  if(start === null) start = ts;\n  const t = (ts - start) / 1000;\n\n  gl.useProgram(prog);\n  gl.bindBuffer(gl.ARRAY_BUFFER, buf);\n  gl.enableVertexAttribArray(aPos);\n  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);\n  gl.uniform2f(uRes, canvas.width, canvas.height);\n  gl.uniform1f(uTime, t);\n  gl.drawArrays(gl.TRIANGLES, 0, 6);\n}\nrequestAnimationFrame(render);\n<\u002Fscript>\n\n\n<\u002Fbody><\u002Fhtml>"
+  </script>
+</body>
+</html>
