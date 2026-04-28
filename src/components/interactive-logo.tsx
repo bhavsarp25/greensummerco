@@ -110,15 +110,15 @@ const DEFAULT_CANDIDATES = ['/models/logo.gltf', '/models/logo.glb'];
 export function InteractiveLogo({
   src,
   scale = 1,
-  maxYawDeg = 50,
+  maxYawDeg = 40,
   maxPitchDeg = 15,
   followSpeed = 0.08,
-  tint = '#688952',
-  roughness = 0.45,
-  metalness = 0.1,
+  tint = '#557042',
+  roughness = 0.38,
+  metalness = 0.08,
   override = 'extruded',
-  edgeColor = '#e8e8e8',
-  edgeRoughness = 0.18,
+  edgeColor = '#f0f0f0',
+  edgeRoughness = 0.16,
   edgeMetalness = 1.0,
   edgeAngleThreshold = 0.55,
 }: InteractiveLogoProps) {
@@ -189,10 +189,10 @@ export function InteractiveLogo({
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
-        <ambientLight intensity={0.35} />
-        <directionalLight position={[5, 6, 5]} intensity={1.0} />
-        <directionalLight position={[-5, 2, 3]} intensity={0.55} />
-        <directionalLight position={[0, -3, -4]} intensity={0.25} />
+        <ambientLight intensity={0.65} />
+        <directionalLight position={[5, 6, 5]} intensity={1.4} />
+        <directionalLight position={[-5, 2, 3]} intensity={0.85} />
+        <directionalLight position={[0, -3, -4]} intensity={0.3} />
 
         <Suspense fallback={<LoaderHtml />}>
           {/* <Bounds> auto-fits the camera to whatever size the model is,
