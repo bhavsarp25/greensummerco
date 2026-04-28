@@ -127,9 +127,9 @@ export function LogoLanding({
               : '#ffffff',
       }}
     >
-      {/* Animated HTML wallpaper layer. The iframe is locked to
-          pointer-events: none so the cursor-tracking 3D logo and the
-          scroll-down chevron still receive mouse events normally. */}
+      {/* Animated HTML wallpaper layer. pointer-events: none so the
+          cursor-tracking 3D logo and the scroll-down chevron still
+          receive mouse events normally. */}
       {wallpaper && (
         <iframe
           src={wallpaper}
@@ -137,24 +137,27 @@ export function LogoLanding({
           aria-hidden="true"
           tabIndex={-1}
           loading="eager"
-          sandbox="allow-scripts allow-same-origin"
-          className="absolute inset-0 w-full h-full border-0"
+          sandbox="allow-scripts allow-same-origin allow-popups-to-escape-sandbox"
+          className="absolute inset-0 w-full h-full border-0 z-0"
           style={{ pointerEvents: 'none' }}
         />
       )}
 
-      {/* Soft cream wash so the logo always has enough contrast even on
-          a busy background. */}
+      {/* Subtle vignette overlay. Almost transparent when a real
+          wallpaper is mounted (so the animation reads through), heavier
+          for the static-image / gradient fallback so the logo stays
+          legible on busy photography. */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none z-[1]"
         style={{
-          background:
-            'linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(216,205,177,0.30) 100%)',
+          background: wallpaper
+            ? 'radial-gradient(ellipse at center, rgba(255,255,255,0) 35%, rgba(216,205,177,0.18) 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(216,205,177,0.30) 100%)',
         }}
       />
 
       <div
-        className="relative w-full h-screen flex items-center justify-center"
+        className="relative w-full h-screen flex items-center justify-center z-[2]"
         style={{
           opacity: 1 - scrollPct * 1.15,
           transform: `translate3d(0, ${-scrollPct * 60}px, 0)`,
@@ -171,7 +174,7 @@ export function LogoLanding({
         type="button"
         onClick={handleScrollDown}
         aria-label="Scroll to next section"
-        className="absolute left-1/2 -translate-x-1/2 bottom-8 md:bottom-10 flex flex-col items-center gap-2 text-[#557042]/80 hover:text-[#557042] transition-colors"
+        className="absolute left-1/2 -translate-x-1/2 bottom-8 md:bottom-10 z-[3] flex flex-col items-center gap-2 text-[#557042]/80 hover:text-[#557042] transition-colors"
         style={{
           opacity: 1 - scrollPct * 1.4,
           pointerEvents: scrollPct > 0.4 ? 'none' : 'auto',
