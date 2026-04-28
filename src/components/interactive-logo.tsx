@@ -37,9 +37,23 @@ interface InteractiveLogoProps {
   roughness?: number;
   /** Metalness applied alongside `tint`. 0 = plastic/painted, 1 = metal. */
   metalness?: number;
+  /**
+   * Material override behaviour:
+   *  - 'auto' (default) — replace any textureless material with `tint`.
+   *    Meshes that already carry textures keep them.
+   *  - 'never' — don't touch the GLTF's materials. Use this once your
+   *    GLTF is exported with real textures so the original look shows.
+   *  - 'always' — replace every material with `tint`, even textured ones.
+   */
+  override?: 'auto' | 'never' | 'always';
 }
 
-const DEFAULT_CANDIDATES = ['/models/logo.glb', '/models/logo.gltf'];
+// Prefer the .gltf manifest first: when textures are exported as sidecar
+// files (the only option in some tools when "embed" is unavailable), the
+// .gltf JSON references them by relative path and three.js will fetch
+// them automatically. Fall back to the .glb if that's the only file
+// present.
+const DEFAULT_CANDIDATES = ['/models/logo.gltf', '/models/logo.glb'];
 
 /**
  * Hero logo component.
@@ -58,6 +72,7 @@ export function InteractiveLogo({
   tint = '#688952',
   roughness = 0.45,
   metalness = 0.1,
+  override = 'auto',
 }: InteractiveLogoProps) {
   const candidates = src ? (Array.isArray(src) ? src : [src]) : DEFAULT_CANDIDATES;
   const [resolvedSrc, setResolvedSrc] = useState<string | null | undefined>(undefined);
@@ -126,6 +141,7 @@ export function InteractiveLogo({
                 tint={tint}
                 roughness={roughness}
                 metalness={metalness}
+                override={override}
               />
             </Center>
           </Bounds>
@@ -151,12 +167,14 @@ function Model({
   tint,
   roughness,
   metalness,
+  override,
 }: {
   src: string;
   scale: number;
   tint: string;
   roughness: number;
   metalness: number;
+  override: 'auto' | 'never' | 'always';
 }) {
   const group = useRef<Group>(null);
   const { scene, animations } = useGLTF(src);
@@ -175,9 +193,14 @@ function Model({
   }, [tint, roughness, metalness]);
 
   useEffect(() => {
+    if (override === 'never') return;
     scene.traverse((obj) => {
       const mesh = obj as Mesh;
       if (!mesh.isMesh) return;
+      if (override === 'always') {
+        mesh.material = overrideMaterial;
+        return;
+      }
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       const allTextureless = mats.every((mat) => {
         const std = mat as MeshStandardMaterial;
@@ -194,7 +217,7 @@ function Model({
         mesh.material = overrideMaterial;
       }
     });
-  }, [scene, overrideMaterial]);
+  }, [scene, overrideMaterial, override]);
 
   useEffect(() => {
     names.forEach((name) => {
@@ -249,4 +272,4 @@ function PlaceholderLogo({ dim = false }: { dim?: boolean }) {
   );
 }
 
-useGLTF.preload('/models/logo.glb');
+useGLTF.preload('/models/logo.gltf');
