@@ -8,7 +8,15 @@ import {
   useAnimations,
   useGLTF,
 } from '@react-three/drei';
-import { Color, MathUtils, MeshStandardMaterial, type Group, type Mesh } from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  MathUtils,
+  MeshStandardMaterial,
+  type Group,
+  type Mesh,
+} from 'three';
 
 interface InteractiveLogoProps {
   /**
@@ -52,8 +60,27 @@ interface InteractiveLogoProps {
    *  - 'never' — don't touch the GLTF's materials. Use this once your
    *    GLTF is exported with real textures so the original look shows.
    *  - 'always' — replace every material with `tint`, even textured ones.
+   *  - 'extruded' — split each mesh into two materials by face normal:
+   *    front/back-facing triangles get `tint` (the painted face of the
+   *    logo) and side-facing triangles get the chrome/metal material.
+   *    Use this for extruded 2D logos like 3DLogoLab.
    */
-  override?: 'auto' | 'never' | 'always';
+  override?: 'auto' | 'never' | 'always' | 'extruded';
+  /**
+   * For override='extruded': color used on the side / extrusion edges.
+   * Defaults to a polished chrome.
+   */
+  edgeColor?: string;
+  /** For override='extruded': roughness of the side material. */
+  edgeRoughness?: number;
+  /** For override='extruded': metalness of the side material. */
+  edgeMetalness?: number;
+  /**
+   * For override='extruded': dot-product threshold between the face
+   * normal and ±Z. Faces with |n.z| above this are treated as front/back
+   * (painted); below it as sides (chrome). 0.5 ~= 60° cone.
+   */
+  edgeAngleThreshold?: number;
 }
 
 // Prefer the .gltf manifest first: when textures are exported as sidecar
@@ -80,7 +107,11 @@ export function InteractiveLogo({
   tint = '#688952',
   roughness = 0.45,
   metalness = 0.1,
-  override = 'auto',
+  override = 'extruded',
+  edgeColor = '#e8e8e8',
+  edgeRoughness = 0.18,
+  edgeMetalness = 1.0,
+  edgeAngleThreshold = 0.55,
 }: InteractiveLogoProps) {
   const candidates = src ? (Array.isArray(src) ? src : [src]) : DEFAULT_CANDIDATES;
   const [resolvedSrc, setResolvedSrc] = useState<string | null | undefined>(undefined);
@@ -151,9 +182,10 @@ export function InteractiveLogo({
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 5, 5]} intensity={1.1} />
-        <directionalLight position={[-5, -2, -3]} intensity={0.4} />
+        <ambientLight intensity={0.35} />
+        <directionalLight position={[5, 6, 5]} intensity={1.0} />
+        <directionalLight position={[-5, 2, 3]} intensity={0.55} />
+        <directionalLight position={[0, -3, -4]} intensity={0.25} />
 
         <Suspense fallback={<LoaderHtml />}>
           {/* <Bounds> auto-fits the camera to whatever size the model is,
@@ -167,6 +199,10 @@ export function InteractiveLogo({
                 roughness={roughness}
                 metalness={metalness}
                 override={override}
+                edgeColor={edgeColor}
+                edgeRoughness={edgeRoughness}
+                edgeMetalness={edgeMetalness}
+                edgeAngleThreshold={edgeAngleThreshold}
                 pointerRef={pointerRef}
                 maxYawDeg={maxYawDeg}
                 maxPitchDeg={maxPitchDeg}
@@ -188,6 +224,10 @@ function Model({
   roughness,
   metalness,
   override,
+  edgeColor,
+  edgeRoughness,
+  edgeMetalness,
+  edgeAngleThreshold,
   pointerRef,
   maxYawDeg,
   maxPitchDeg,
@@ -198,7 +238,11 @@ function Model({
   tint: string;
   roughness: number;
   metalness: number;
-  override: 'auto' | 'never' | 'always';
+  override: 'auto' | 'never' | 'always' | 'extruded';
+  edgeColor: string;
+  edgeRoughness: number;
+  edgeMetalness: number;
+  edgeAngleThreshold: number;
   pointerRef: { current: { x: number; y: number } };
   maxYawDeg: number;
   maxPitchDeg: number;
@@ -208,27 +252,48 @@ function Model({
   const { scene, animations } = useGLTF(src);
   const { actions, names } = useAnimations(animations, group);
 
-  // Build a single shared PBR material for any mesh whose original material
-  // came in textureless (the common case when a GLTF is exported from a
-  // procedural / node-based shader). Memoised so HMR doesn't keep allocating.
-  const overrideMaterial = useMemo(() => {
-    const m = new MeshStandardMaterial({
-      color: new Color(tint),
-      roughness,
-      metalness,
-    });
-    return m;
-  }, [tint, roughness, metalness]);
+  const paintMaterial = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: new Color(tint),
+        roughness,
+        metalness,
+      }),
+    [tint, roughness, metalness],
+  );
+
+  const edgeMaterial = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: new Color(edgeColor),
+        roughness: edgeRoughness,
+        metalness: edgeMetalness,
+      }),
+    [edgeColor, edgeRoughness, edgeMetalness],
+  );
 
   useEffect(() => {
     if (override === 'never') return;
     scene.traverse((obj) => {
       const mesh = obj as Mesh;
       if (!mesh.isMesh) return;
+
       if (override === 'always') {
-        mesh.material = overrideMaterial;
+        mesh.material = paintMaterial;
         return;
       }
+
+      if (override === 'extruded') {
+        applyExtrudedMaterials(
+          mesh,
+          paintMaterial,
+          edgeMaterial,
+          edgeAngleThreshold,
+        );
+        return;
+      }
+
+      // 'auto'
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       const allTextureless = mats.every((mat) => {
         const std = mat as MeshStandardMaterial;
@@ -242,10 +307,10 @@ function Model({
         return !hasMap;
       });
       if (allTextureless) {
-        mesh.material = overrideMaterial;
+        mesh.material = paintMaterial;
       }
     });
-  }, [scene, overrideMaterial, override]);
+  }, [scene, paintMaterial, edgeMaterial, override, edgeAngleThreshold]);
 
   useEffect(() => {
     names.forEach((name) => {
@@ -285,6 +350,113 @@ function Model({
       <primitive object={scene} />
     </group>
   );
+}
+
+/**
+ * For an extruded 2D logo: walk the mesh's triangles, compute each face's
+ * dominant normal axis, and split the geometry into two material groups
+ * — front/back-facing triangles use the paint material, side-facing
+ * triangles use the chrome/metal edge material.
+ *
+ * This works because logos coming out of 3DLogoLab (and most "extrude
+ * the SVG along Z" pipelines) have very consistent face normals: ±Z for
+ * the painted faces and roughly perpendicular to Z for the cut sides.
+ *
+ * The classification is per-triangle, so it survives whatever orientation
+ * the model was exported in — we use the world-space normal averaged
+ * across each triangle's three vertices.
+ */
+function applyExtrudedMaterials(
+  mesh: Mesh,
+  paintMaterial: MeshStandardMaterial,
+  edgeMaterial: MeshStandardMaterial,
+  threshold: number,
+) {
+  const geometry = mesh.geometry as BufferGeometry;
+  if (!geometry.attributes.position) return;
+
+  // Bake any local transform into vertex positions so face normals are
+  // computed in the same frame regardless of how the GLTF is parented.
+  geometry.applyMatrix4(mesh.matrixWorld);
+  mesh.matrix.identity();
+  mesh.position.set(0, 0, 0);
+  mesh.rotation.set(0, 0, 0);
+  mesh.scale.set(1, 1, 1);
+  mesh.updateMatrix();
+
+  if (!geometry.index) {
+    geometry.setIndex(buildSequentialIndex(geometry.attributes.position.count));
+  }
+  geometry.computeVertexNormals();
+
+  const index = geometry.index!;
+  const indexArray = index.array as ArrayLike<number>;
+  const triCount = indexArray.length / 3;
+
+  const positions = geometry.attributes.position;
+  const px = positions.array as ArrayLike<number>;
+
+  // Find the dominant axis by inspecting the AABB. 3DLogoLab extrudes
+  // along the shortest axis; classifying "is this triangle facing the
+  // extrusion axis" generalises to any orientation the model arrived in.
+  geometry.computeBoundingBox();
+  const bb = geometry.boundingBox!;
+  const span = {
+    x: bb.max.x - bb.min.x,
+    y: bb.max.y - bb.min.y,
+    z: bb.max.z - bb.min.z,
+  };
+  const extrudeAxis: 0 | 1 | 2 =
+    span.z <= span.x && span.z <= span.y ? 2 : span.y <= span.x ? 1 : 0;
+
+  // Reorder indices so all "paint" triangles come first, then all "edge"
+  // triangles — that way we can describe the split as two contiguous
+  // material groups.
+  const paintIdx: number[] = [];
+  const edgeIdx: number[] = [];
+
+  const ax = (i: number, k: number) => px[indexArray[i] * 3 + k];
+
+  for (let t = 0; t < triCount; t++) {
+    const i0 = t * 3;
+    // Compute triangle normal via cross product of two edges.
+    const ax0 = ax(i0, 0), ay0 = ax(i0, 1), az0 = ax(i0, 2);
+    const ax1 = ax(i0 + 1, 0), ay1 = ax(i0 + 1, 1), az1 = ax(i0 + 1, 2);
+    const ax2 = ax(i0 + 2, 0), ay2 = ax(i0 + 2, 1), az2 = ax(i0 + 2, 2);
+    const ex1 = ax1 - ax0, ey1 = ay1 - ay0, ez1 = az1 - az0;
+    const ex2 = ax2 - ax0, ey2 = ay2 - ay0, ez2 = az2 - az0;
+    const nx = ey1 * ez2 - ez1 * ey2;
+    const ny = ez1 * ex2 - ex1 * ez2;
+    const nz = ex1 * ey2 - ey1 * ex2;
+    const len = Math.hypot(nx, ny, nz) || 1;
+    const axisComponent =
+      extrudeAxis === 0 ? nx / len : extrudeAxis === 1 ? ny / len : nz / len;
+
+    const arr = Math.abs(axisComponent) >= threshold ? paintIdx : edgeIdx;
+    arr.push(indexArray[i0], indexArray[i0 + 1], indexArray[i0 + 2]);
+  }
+
+  const totalLen = paintIdx.length + edgeIdx.length;
+  const useUint32 = totalLen > 65535 || (positions.count > 65535);
+  const Ctor = useUint32 ? Uint32Array : Uint16Array;
+  const merged = new Ctor(totalLen);
+  for (let i = 0; i < paintIdx.length; i++) merged[i] = paintIdx[i];
+  for (let i = 0; i < edgeIdx.length; i++) merged[paintIdx.length + i] = edgeIdx[i];
+
+  geometry.setIndex(new BufferAttribute(merged, 1));
+
+  geometry.clearGroups();
+  geometry.addGroup(0, paintIdx.length, 0);
+  geometry.addGroup(paintIdx.length, edgeIdx.length, 1);
+
+  mesh.material = [paintMaterial, edgeMaterial];
+}
+
+function buildSequentialIndex(count: number) {
+  const Ctor = count > 65535 ? Uint32Array : Uint16Array;
+  const arr = new Ctor(count);
+  for (let i = 0; i < count; i++) arr[i] = i;
+  return new BufferAttribute(arr, 1);
 }
 
 function LoaderHtml() {
