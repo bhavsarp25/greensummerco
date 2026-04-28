@@ -189,10 +189,10 @@ export function InteractiveLogo({
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
-        <ambientLight intensity={0.65} />
-        <directionalLight position={[5, 6, 5]} intensity={1.4} />
-        <directionalLight position={[-5, 2, 3]} intensity={0.85} />
-        <directionalLight position={[0, -3, -4]} intensity={0.3} />
+        <ambientLight intensity={0.32} />
+        <directionalLight position={[5, 6, 5]} intensity={0.75} />
+        <directionalLight position={[-5, 2, 3]} intensity={0.4} />
+        <directionalLight position={[0, -3, -4]} intensity={0.18} />
 
         <Suspense fallback={<LoaderHtml />}>
           {/* <Bounds> auto-fits the camera to whatever size the model is,
@@ -217,7 +217,7 @@ export function InteractiveLogo({
               />
             </Center>
           </Bounds>
-          <Environment preset="studio" />
+          <Environment preset="apartment" environmentIntensity={0.55} />
         </Suspense>
       </Canvas>
     </div>
