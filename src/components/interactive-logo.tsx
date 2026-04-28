@@ -5,27 +5,35 @@ import {
   Center,
   Environment,
   Html,
-  OrbitControls,
   useAnimations,
   useGLTF,
 } from '@react-three/drei';
-import { Color, MeshStandardMaterial, type Group, type Mesh } from 'three';
+import { Color, MathUtils, MeshStandardMaterial, type Group, type Mesh } from 'three';
 
 interface InteractiveLogoProps {
   /**
    * URL(s) to a GLB/GLTF file, served from /public. The first one that
-   * actually exists is used. Defaults probe `/models/logo.glb` then
-   * `/models/logo.gltf`.
+   * actually exists is used. Defaults probe `/models/logo.gltf` then
+   * `/models/logo.glb`.
    */
   src?: string | string[];
   /** Uniform scale applied to the loaded model. */
   scale?: number;
-  /** Spin the model on its Y axis. */
-  autoRotate?: boolean;
-  /** Speed of auto-rotation (drei units, ~1 = a few seconds per turn). */
-  autoRotateSpeed?: number;
-  /** Allow scroll-to-zoom interaction. */
-  enableZoom?: boolean;
+  /**
+   * Maximum left/right rotation in degrees as the cursor moves across the
+   * page. The model lerps smoothly toward this; it never exceeds it.
+   */
+  maxYawDeg?: number;
+  /**
+   * Maximum up/down rotation in degrees as the cursor moves across the
+   * page. Same clamping behaviour as `maxYawDeg`.
+   */
+  maxPitchDeg?: number;
+  /**
+   * 0..1 lerp factor per frame applied to rotation. Higher = snappier
+   * tracking. Lower = smoother / more inertial.
+   */
+  followSpeed?: number;
   /**
    * Override the model's material color. Useful when the GLTF was exported
    * without textures (procedural / node-based shaders don't survive GLTF
@@ -66,9 +74,9 @@ const DEFAULT_CANDIDATES = ['/models/logo.gltf', '/models/logo.glb'];
 export function InteractiveLogo({
   src,
   scale = 1,
-  autoRotate = true,
-  autoRotateSpeed = 0.6,
-  enableZoom = false,
+  maxYawDeg = 50,
+  maxPitchDeg = 15,
+  followSpeed = 0.08,
   tint = '#688952',
   roughness = 0.45,
   metalness = 0.1,
@@ -119,6 +127,23 @@ export function InteractiveLogo({
     return <PlaceholderLogo />;
   }
 
+  // Shared, mutable reference to the normalised cursor position
+  // (-1 .. +1 on each axis, where (0,0) is the centre of the viewport).
+  // Updated synchronously by a window-level pointermove listener so the
+  // model tracks the user's cursor wherever it is on the page, not just
+  // when it's hovering the canvas. A ref (not state) so we don't re-render
+  // every frame.
+  const pointerRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      pointerRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerRef.current.y = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => window.removeEventListener('pointermove', onMove);
+  }, []);
+
   return (
     <div className="w-full h-full">
       <Canvas
@@ -142,20 +167,15 @@ export function InteractiveLogo({
                 roughness={roughness}
                 metalness={metalness}
                 override={override}
+                pointerRef={pointerRef}
+                maxYawDeg={maxYawDeg}
+                maxPitchDeg={maxPitchDeg}
+                followSpeed={followSpeed}
               />
             </Center>
           </Bounds>
           <Environment preset="studio" />
         </Suspense>
-
-        <OrbitControls
-          enablePan={false}
-          enableZoom={enableZoom}
-          autoRotate={autoRotate}
-          autoRotateSpeed={autoRotateSpeed}
-          minPolarAngle={Math.PI / 3}
-          maxPolarAngle={Math.PI / 1.8}
-        />
       </Canvas>
     </div>
   );
@@ -168,6 +188,10 @@ function Model({
   roughness,
   metalness,
   override,
+  pointerRef,
+  maxYawDeg,
+  maxPitchDeg,
+  followSpeed,
 }: {
   src: string;
   scale: number;
@@ -175,6 +199,10 @@ function Model({
   roughness: number;
   metalness: number;
   override: 'auto' | 'never' | 'always';
+  pointerRef: { current: { x: number; y: number } };
+  maxYawDeg: number;
+  maxPitchDeg: number;
+  followSpeed: number;
 }) {
   const group = useRef<Group>(null);
   const { scene, animations } = useGLTF(src);
@@ -228,9 +256,28 @@ function Model({
     };
   }, [actions, names]);
 
-  useFrame((state) => {
-    if (!group.current || names.length > 0) return;
-    group.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+  // Cursor-follow rotation, clamped to (maxYawDeg, maxPitchDeg). The
+  // pointer ref carries -1..+1 across the viewport, which we map to
+  // ±maxDeg on each axis. Y is inverted so moving the cursor up tilts
+  // the logo up (right-hand rotation around X).
+  const maxYaw = MathUtils.degToRad(maxYawDeg);
+  const maxPitch = MathUtils.degToRad(maxPitchDeg);
+  useFrame(() => {
+    if (!group.current) return;
+    const px = MathUtils.clamp(pointerRef.current.x, -1, 1);
+    const py = MathUtils.clamp(pointerRef.current.y, -1, 1);
+    const targetYaw = px * maxYaw;
+    const targetPitch = -py * maxPitch;
+    group.current.rotation.y = MathUtils.lerp(
+      group.current.rotation.y,
+      targetYaw,
+      followSpeed,
+    );
+    group.current.rotation.x = MathUtils.lerp(
+      group.current.rotation.x,
+      targetPitch,
+      followSpeed,
+    );
   });
 
   return (
