@@ -94,10 +94,11 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Decorative vine that draws itself as the user scrolls from the
-          landing into the early content. Sits behind everything except
-          the wallpaper iframe. */}
-      <GrowingVine start={0.02} end={0.35} side="left" />
+      {/* Decorative vines that draw themselves as the user scrolls from
+          the landing into the early content. Mirrored on the left and
+          right edges so the page is framed symmetrically with leafy
+          growth. */}
+      <GrowingVine start={0.02} end={0.45} />
 
       {/* Page 1: Landing — interactive 3D logo, full viewport, scroll-down hint */}
       <LogoLanding scrollTargetId="hero" />

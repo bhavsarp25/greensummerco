@@ -202,45 +202,107 @@ interface GrowingVineProps {
    */
   start?: number;
   end?: number;
-  /** Alignment along the viewport. Defaults to 'left'. */
-  side?: 'left' | 'right';
+  /**
+   * Render the vine on a single side or mirrored on both sides
+   * (default). 'mirror' produces a left + right pair so the page is
+   * framed symmetrically.
+   */
+  side?: 'left' | 'right' | 'mirror';
   /** Stroke colour. */
   color?: string;
+  /** Stroke width of the main vine. */
+  strokeWidth?: number;
 }
 
+/**
+ * Decorative vine that draws itself along the side(s) of the viewport
+ * as the user scrolls. When side='mirror' (the default), the vine is
+ * rendered twice — once on the left, once on the right with horizontal
+ * symmetry — framing the page with leafy growth.
+ */
 export function GrowingVine({
   start = 0,
   end = 0.5,
-  side = 'left',
+  side = 'mirror',
   color = '#557042',
+  strokeWidth = 3,
 }: GrowingVineProps) {
+  if (side === 'mirror') {
+    return (
+      <>
+        <SingleVine
+          start={start}
+          end={end}
+          side="left"
+          color={color}
+          strokeWidth={strokeWidth}
+        />
+        <SingleVine
+          start={start}
+          end={end}
+          side="right"
+          color={color}
+          strokeWidth={strokeWidth}
+        />
+      </>
+    );
+  }
+  return (
+    <SingleVine
+      start={start}
+      end={end}
+      side={side}
+      color={color}
+      strokeWidth={strokeWidth}
+    />
+  );
+}
+
+interface SingleVineProps {
+  start: number;
+  end: number;
+  side: 'left' | 'right';
+  color: string;
+  strokeWidth: number;
+}
+
+function SingleVine({ start, end, side, color, strokeWidth }: SingleVineProps) {
   const { scrollYProgress } = useScroll();
   const pathLength = useTransform(scrollYProgress, [start, end], [0, 1]);
+  const branchLength = useTransform(scrollYProgress, [start + 0.04, end], [0, 1]);
   const opacity = useTransform(
     scrollYProgress,
     [start, start + 0.02, end - 0.02, end + 0.05],
-    [0, 1, 1, 0.5],
+    [0, 1, 1, 0.55],
   );
 
-  // Three leaf accents that fade in at staggered points along the
-  // animation, so the vine reads as growing leaves as it draws.
-  const leaf1Scale = useTransform(scrollYProgress, [0.12, 0.22], [0, 1]);
-  const leaf2Scale = useTransform(scrollYProgress, [0.22, 0.32], [0, 1]);
-  const leaf3Scale = useTransform(scrollYProgress, [0.34, 0.44], [0, 1]);
-  const leafOpacity1 = useTransform(scrollYProgress, [0.12, 0.2], [0, 1]);
-  const leafOpacity2 = useTransform(scrollYProgress, [0.22, 0.3], [0, 1]);
-  const leafOpacity3 = useTransform(scrollYProgress, [0.34, 0.42], [0, 1]);
+  // 6 leaves spread along the vine. Each leaf is a tuple of
+  // (x, y, rotation, scale). The growing-in animation is staggered so
+  // they appear sequentially as the vine draws past them.
+  const leaves: Array<{ x: number; y: number; rot: number; scale: number; t: number }> = [
+    { x: 70, y: 130, rot: -38, scale: 1.0, t: 0.10 },
+    { x: 130, y: 230, rot: 32, scale: 0.85, t: 0.16 },
+    { x: 65, y: 330, rot: -26, scale: 1.15, t: 0.22 },
+    { x: 140, y: 430, rot: 44, scale: 0.9, t: 0.28 },
+    { x: 75, y: 540, rot: -34, scale: 1.05, t: 0.34 },
+    { x: 130, y: 660, rot: 30, scale: 0.95, t: 0.40 },
+  ];
+
+  // Small berries / dot accents to add density without too much chrome.
+  const berries: Array<{ x: number; y: number; r: number; t: number }> = [
+    { x: 110, y: 195, r: 3, t: 0.13 },
+    { x: 95, y: 405, r: 2.5, t: 0.27 },
+    { x: 115, y: 615, r: 3, t: 0.39 },
+  ];
 
   const positionClass =
-    side === 'right' ? 'right-0 md:right-6' : 'left-0 md:left-6';
+    side === 'right' ? 'right-0 md:right-4' : 'left-0 md:left-4';
 
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none fixed top-0 ${positionClass} h-screen w-32 md:w-48 z-10`}
-      style={{
-        transform: side === 'right' ? 'scaleX(-1)' : undefined,
-      }}
+      className={`pointer-events-none fixed top-0 ${positionClass} h-screen w-28 md:w-44 lg:w-52 z-10`}
+      style={{ transform: side === 'right' ? 'scaleX(-1)' : undefined }}
     >
       <motion.svg
         viewBox="0 0 200 800"
@@ -248,8 +310,18 @@ export function GrowingVine({
         className="w-full h-full"
         style={{ opacity }}
       >
-        {/* The vine path. A meandering S-curve down the side with
-            organic curl variations. */}
+        {/* Soft glow behind the vine for depth. */}
+        <defs>
+          <filter id={`vine-glow-${side}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Main vine — meandering S-curve from top to bottom. */}
         <motion.path
           d="
             M 100 -10
@@ -261,47 +333,161 @@ export function GrowingVine({
           "
           fill="none"
           stroke={color}
-          strokeWidth="3"
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
-          style={{ pathLength }}
+          style={{ pathLength, filter: `url(#vine-glow-${side})` }}
         />
 
-        {/* Leaf accents — each is a soft elongated drop placed along
-            the vine, scaled and faded in at its segment of the
-            animation. */}
-        <motion.g style={{ opacity: leafOpacity1, scale: leaf1Scale }} transform="translate(70 170) rotate(-30)">
-          <Leaf color={color} />
-        </motion.g>
-        <motion.g style={{ opacity: leafOpacity2, scale: leaf2Scale }} transform="translate(135 320) rotate(40)">
-          <Leaf color={color} />
-        </motion.g>
-        <motion.g style={{ opacity: leafOpacity3, scale: leaf3Scale }} transform="translate(80 520) rotate(-20)">
-          <Leaf color={color} />
-        </motion.g>
+        {/* Thin secondary branches that draw alongside the main vine. */}
+        <motion.path
+          d="M 70 170 q 20 -25 50 -10"
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth * 0.55}
+          strokeLinecap="round"
+          opacity={0.7}
+          style={{ pathLength: branchLength }}
+        />
+        <motion.path
+          d="M 130 320 q -25 -15 -55 -5"
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth * 0.55}
+          strokeLinecap="round"
+          opacity={0.7}
+          style={{ pathLength: branchLength }}
+        />
+        <motion.path
+          d="M 80 520 q 25 -20 55 -10"
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth * 0.55}
+          strokeLinecap="round"
+          opacity={0.7}
+          style={{ pathLength: branchLength }}
+        />
+
+        {/* Leaves. */}
+        {leaves.map((l, i) => (
+          <AnimatedLeaf
+            key={i}
+            x={l.x}
+            y={l.y}
+            rot={l.rot}
+            scale={l.scale}
+            t={l.t}
+            color={color}
+            scrollYProgress={scrollYProgress}
+          />
+        ))}
+
+        {/* Berries / accent dots. */}
+        {berries.map((b, i) => (
+          <AnimatedBerry
+            key={i}
+            x={b.x}
+            y={b.y}
+            r={b.r}
+            t={b.t}
+            color={color}
+            scrollYProgress={scrollYProgress}
+          />
+        ))}
       </motion.svg>
     </div>
+  );
+}
+
+function AnimatedLeaf({
+  x,
+  y,
+  rot,
+  scale,
+  t,
+  color,
+  scrollYProgress,
+}: {
+  x: number;
+  y: number;
+  rot: number;
+  scale: number;
+  t: number;
+  color: string;
+  scrollYProgress: MotionValue<number>;
+}) {
+  const grow = useTransform(scrollYProgress, [t, t + 0.08], [0, 1]);
+  const fade = useTransform(scrollYProgress, [t, t + 0.06], [0, 1]);
+  const sway = useTransform(scrollYProgress, [t, t + 0.5], [rot - 6, rot + 6]);
+
+  return (
+    <motion.g
+      style={{ scale: grow, opacity: fade, rotate: sway, originX: 0, originY: 0 }}
+      transform={`translate(${x} ${y}) scale(${scale})`}
+    >
+      <Leaf color={color} />
+    </motion.g>
+  );
+}
+
+function AnimatedBerry({
+  x,
+  y,
+  r,
+  t,
+  color,
+  scrollYProgress,
+}: {
+  x: number;
+  y: number;
+  r: number;
+  t: number;
+  color: string;
+  scrollYProgress: MotionValue<number>;
+}) {
+  const grow = useTransform(scrollYProgress, [t, t + 0.06], [0, 1]);
+  const fade = useTransform(scrollYProgress, [t, t + 0.05], [0, 1]);
+  return (
+    <motion.circle
+      cx={x}
+      cy={y}
+      r={r}
+      fill={color}
+      style={{ scale: grow, opacity: fade, originX: x, originY: y }}
+    />
   );
 }
 
 function Leaf({ color }: { color: string }) {
   return (
     <g>
+      {/* Soft fill for body. */}
       <path
-        d="M 0 0 C -10 -8, -22 -6, -28 6 C -22 18, -10 22, 0 26 C 10 22, 22 18, 28 6 C 22 -6, 10 -8, 0 0 Z"
+        d="M 0 0 C -12 -10, -28 -6, -34 8 C -28 22, -12 28, 0 32 C 12 28, 28 22, 34 8 C 28 -6, 12 -10, 0 0 Z"
         fill={color}
-        opacity={0.18}
+        opacity={0.22}
       />
+      {/* Outline. */}
       <path
-        d="M 0 0 C -10 -8, -22 -6, -28 6 C -22 18, -10 22, 0 26 C 10 22, 22 18, 28 6 C 22 -6, 10 -8, 0 0 Z"
+        d="M 0 0 C -12 -10, -28 -6, -34 8 C -28 22, -12 28, 0 32 C 12 28, 28 22, 34 8 C 28 -6, 12 -10, 0 0 Z"
         fill="none"
         stroke={color}
-        strokeWidth="1.6"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
       />
+      {/* Central rib. */}
       <path
-        d="M 0 0 L 0 26"
+        d="M 0 0 L 0 32"
         stroke={color}
-        strokeWidth="1.2"
+        strokeWidth="1.3"
         strokeLinecap="round"
+      />
+      {/* Side veins. */}
+      <path
+        d="M 0 8 L -14 4 M 0 8 L 14 4 M 0 18 L -18 16 M 0 18 L 18 16 M 0 26 L -12 28 M 0 26 L 12 28"
+        stroke={color}
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity={0.7}
       />
     </g>
   );
