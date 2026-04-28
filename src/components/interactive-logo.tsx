@@ -1,6 +1,7 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {
+  Bounds,
   Center,
   Environment,
   Html,
@@ -8,7 +9,7 @@ import {
   useAnimations,
   useGLTF,
 } from '@react-three/drei';
-import type { Group } from 'three';
+import { Color, MeshStandardMaterial, type Group, type Mesh } from 'three';
 
 interface InteractiveLogoProps {
   /**
@@ -25,6 +26,17 @@ interface InteractiveLogoProps {
   autoRotateSpeed?: number;
   /** Allow scroll-to-zoom interaction. */
   enableZoom?: boolean;
+  /**
+   * Override the model's material color. Useful when the GLTF was exported
+   * without textures (procedural / node-based shaders don't survive GLTF
+   * export — the result is a white default material). Accepts any CSS
+   * color string. Defaults to the brand green.
+   */
+  tint?: string;
+  /** Roughness applied alongside `tint`. 0 = mirror, 1 = matte. */
+  roughness?: number;
+  /** Metalness applied alongside `tint`. 0 = plastic/painted, 1 = metal. */
+  metalness?: number;
 }
 
 const DEFAULT_CANDIDATES = ['/models/logo.glb', '/models/logo.gltf'];
@@ -43,6 +55,9 @@ export function InteractiveLogo({
   autoRotate = true,
   autoRotateSpeed = 0.6,
   enableZoom = false,
+  tint = '#688952',
+  roughness = 0.45,
+  metalness = 0.1,
 }: InteractiveLogoProps) {
   const candidates = src ? (Array.isArray(src) ? src : [src]) : DEFAULT_CANDIDATES;
   const [resolvedSrc, setResolvedSrc] = useState<string | null | undefined>(undefined);
@@ -92,7 +107,7 @@ export function InteractiveLogo({
   return (
     <div className="w-full h-full">
       <Canvas
-        camera={{ position: [0, 0.5, 4], fov: 40 }}
+        camera={{ position: [0, 0, 8], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
@@ -101,9 +116,19 @@ export function InteractiveLogo({
         <directionalLight position={[-5, -2, -3]} intensity={0.4} />
 
         <Suspense fallback={<LoaderHtml />}>
-          <Center>
-            <Model src={resolvedSrc} scale={scale} />
-          </Center>
+          {/* <Bounds> auto-fits the camera to whatever size the model is,
+              so a 0.1-unit logo and a 20-unit logo both fill the frame. */}
+          <Bounds fit clip observe margin={1.2}>
+            <Center>
+              <Model
+                src={resolvedSrc}
+                scale={scale}
+                tint={tint}
+                roughness={roughness}
+                metalness={metalness}
+              />
+            </Center>
+          </Bounds>
           <Environment preset="studio" />
         </Suspense>
 
@@ -120,10 +145,56 @@ export function InteractiveLogo({
   );
 }
 
-function Model({ src, scale }: { src: string; scale: number }) {
+function Model({
+  src,
+  scale,
+  tint,
+  roughness,
+  metalness,
+}: {
+  src: string;
+  scale: number;
+  tint: string;
+  roughness: number;
+  metalness: number;
+}) {
   const group = useRef<Group>(null);
   const { scene, animations } = useGLTF(src);
   const { actions, names } = useAnimations(animations, group);
+
+  // Build a single shared PBR material for any mesh whose original material
+  // came in textureless (the common case when a GLTF is exported from a
+  // procedural / node-based shader). Memoised so HMR doesn't keep allocating.
+  const overrideMaterial = useMemo(() => {
+    const m = new MeshStandardMaterial({
+      color: new Color(tint),
+      roughness,
+      metalness,
+    });
+    return m;
+  }, [tint, roughness, metalness]);
+
+  useEffect(() => {
+    scene.traverse((obj) => {
+      const mesh = obj as Mesh;
+      if (!mesh.isMesh) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const allTextureless = mats.every((mat) => {
+        const std = mat as MeshStandardMaterial;
+        const hasMap = Boolean(
+          std?.map ??
+            std?.normalMap ??
+            std?.roughnessMap ??
+            std?.metalnessMap ??
+            std?.emissiveMap,
+        );
+        return !hasMap;
+      });
+      if (allTextureless) {
+        mesh.material = overrideMaterial;
+      }
+    });
+  }, [scene, overrideMaterial]);
 
   useEffect(() => {
     names.forEach((name) => {
@@ -134,7 +205,6 @@ function Model({ src, scale }: { src: string; scale: number }) {
     };
   }, [actions, names]);
 
-  // Gentle bobbing if there are no embedded animations.
   useFrame((state) => {
     if (!group.current || names.length > 0) return;
     group.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
