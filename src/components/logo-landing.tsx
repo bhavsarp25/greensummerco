@@ -11,6 +11,12 @@ interface LogoLandingProps {
    * cream gradient when none are available.
    */
   backgroundCandidates?: string[];
+  /**
+   * Optional path to an animated HTML wallpaper. If the file exists it
+   * takes priority over the static background image and is mounted as
+   * a full-bleed sandboxed iframe behind the logo.
+   */
+  wallpaperUrl?: string;
 }
 
 /**
@@ -18,6 +24,11 @@ interface LogoLandingProps {
  * subtle scroll-down chevron at the bottom invites the user to continue.
  * As the user scrolls, the entire landing fades and lifts slightly,
  * which produces the sense that the next section "rises" from below.
+ *
+ * Background priority:
+ *   1. Animated HTML wallpaper at /wallpaper/index.html (iframe).
+ *   2. Static image at /images/background.{webp,jpg,jpeg,png}.
+ *   3. Cream gradient fallback.
  */
 export function LogoLanding({
   scrollTargetId,
@@ -27,9 +38,11 @@ export function LogoLanding({
     '/images/background.jpeg',
     '/images/background.png',
   ],
+  wallpaperUrl = '/wallpaper/index.html',
 }: LogoLandingProps) {
   const [scrollPct, setScrollPct] = useState(0);
   const [bg, setBg] = useState<string | null>(null);
+  const [wallpaper, setWallpaper] = useState<string | null>(null);
 
   useEffect(() => {
     const onScroll = () => {
@@ -44,6 +57,34 @@ export function LogoLanding({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Probe for an animated HTML wallpaper. We must distinguish a real
+  // /wallpaper/index.html from Vite's SPA fallback (which also returns
+  // 200 + text/html for unknown paths). Use a GET and look for the
+  // <div id="root"> marker emitted by our app shell — anything else
+  // is treated as a real custom wallpaper.
+  useEffect(() => {
+    let cancelled = false;
+    async function probe() {
+      try {
+        const res = await fetch(wallpaperUrl, { cache: 'no-cache' });
+        if (!res.ok) return;
+        const ct = (res.headers.get('content-type') ?? '').toLowerCase();
+        if (!ct.includes('html')) return;
+        const text = await res.text();
+        const isAppShell =
+          text.includes('id="root"') && text.includes('/src/main.tsx');
+        if (!isAppShell && !cancelled) setWallpaper(wallpaperUrl);
+      } catch {
+        // network/parse error -> no wallpaper
+      }
+    }
+    probe();
+    return () => {
+      cancelled = true;
+    };
+  }, [wallpaperUrl]);
+
+  // Probe for a static background image as a fallback.
   useEffect(() => {
     let cancelled = false;
     async function probe() {
@@ -78,18 +119,37 @@ export function LogoLanding({
       id="landing"
       className="relative min-h-screen w-full overflow-hidden flex items-center justify-center"
       style={{
-        background: bg
-          ? `url(${bg}) center/cover no-repeat`
-          : 'linear-gradient(180deg, #ffffff 0%, rgba(216, 205, 177, 0.25) 100%)',
+        background:
+          !wallpaper && bg
+            ? `url(${bg}) center/cover no-repeat`
+            : !wallpaper
+              ? 'linear-gradient(180deg, #ffffff 0%, rgba(216, 205, 177, 0.25) 100%)'
+              : '#ffffff',
       }}
     >
+      {/* Animated HTML wallpaper layer. The iframe is locked to
+          pointer-events: none so the cursor-tracking 3D logo and the
+          scroll-down chevron still receive mouse events normally. */}
+      {wallpaper && (
+        <iframe
+          src={wallpaper}
+          title="Animated background wallpaper"
+          aria-hidden="true"
+          tabIndex={-1}
+          loading="eager"
+          sandbox="allow-scripts allow-same-origin"
+          className="absolute inset-0 w-full h-full border-0"
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
+
       {/* Soft cream wash so the logo always has enough contrast even on
-          a busy background image. */}
+          a busy background. */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(216,205,177,0.35) 100%)',
+            'linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(216,205,177,0.30) 100%)',
         }}
       />
 
