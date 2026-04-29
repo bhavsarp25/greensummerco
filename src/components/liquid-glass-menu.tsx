@@ -120,8 +120,8 @@ export function LiquidGlassMenu({
         onClick={() => setOpen((v) => !v)}
         active={open}
       >
-        <span className="flex items-center gap-2 text-[#3d5230]">
-          <span className="hidden sm:inline tracking-[0.18em] text-xs uppercase font-medium">
+        <span className="flex items-center gap-2 text-[#2f3d26]">
+          <span className="hidden sm:inline font-sans tracking-[0.14em] text-[11px] uppercase font-medium text-[#2f3d26]">
             Menu
           </span>
           <span className="relative w-5 h-5">
@@ -172,12 +172,12 @@ export function LiquidGlassMenu({
                       <button
                         type="button"
                         onClick={() => handleSelect(item.id)}
-                        className="group block w-full text-left px-6 py-2.5 text-[#3d5230] hover:bg-white/30 transition-colors"
+                        className="group block w-full text-left px-6 py-2.5 text-[#2f3d26] hover:bg-white/35 transition-colors font-sans"
                       >
                         <TextStaggerHover
                           text={item.label}
                           index={i}
-                          className="text-base font-medium tracking-wide"
+                          className="text-[15px] font-medium tracking-[-0.01em]"
                         />
                       </button>
                     </li>

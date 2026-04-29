@@ -65,7 +65,7 @@ export function ConvergingHeadline({
     <section
       ref={ref}
       id={id}
-      className="relative min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-[#D8CDB1]/20 via-white to-white overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center px-6 sm:px-10 bg-gradient-to-b from-[#f7f4ef] via-[#faf8f5] to-white overflow-hidden"
     >
       {eyebrow && (
         <motion.div
@@ -76,7 +76,9 @@ export function ConvergingHeadline({
             className="block h-px bg-[#557042] origin-left"
             style={{ width: 64, scaleX: tendrilScale }}
           />
-          <span className="text-xs tracking-[0.3em] uppercase">{eyebrow}</span>
+          <span className="text-[11px] sm:text-xs font-sans font-medium tracking-[0.22em] uppercase text-[#3d5230]/90">
+            {eyebrow}
+          </span>
           <motion.span
             className="block h-px bg-[#557042] origin-right"
             style={{ width: 64, scaleX: tendrilScale }}
@@ -85,14 +87,14 @@ export function ConvergingHeadline({
       )}
 
       <h1
-        className="text-5xl md:text-7xl lg:text-8xl text-center leading-[1.02] tracking-tight"
+        className="font-display text-display-sm sm:text-display-md md:text-display-lg lg:text-display-xl text-center"
         style={{ perspective: '600px' }}
       >
         {lines.map((line, lineIdx) => {
           const chars = line.text.split('');
           const center = (chars.length - 1) / 2;
           const colorClass =
-            line.color === 'secondary' ? 'text-gray-800' : 'text-[#557042]';
+            line.color === 'secondary' ? 'text-[#2c3824]' : 'text-[#3d5230]';
           return (
             <span key={lineIdx} className={`block ${colorClass}`}>
               {chars.map((c, i) => (
@@ -111,7 +113,7 @@ export function ConvergingHeadline({
 
       {subtitle && (
         <motion.p
-          className="text-gray-600 text-center max-w-2xl text-lg md:text-xl mt-8"
+          className="font-sans text-[#5c5a55] text-center max-w-xl text-base md:text-lg leading-relaxed font-normal mt-10"
           style={{ opacity: subtitleOpacity, y: subtitleY }}
         >
           {subtitle}
@@ -121,7 +123,7 @@ export function ConvergingHeadline({
       {cta && (
         <motion.button
           onClick={cta.onClick}
-          className="mt-10 px-10 py-4 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors text-lg shadow-md hover:shadow-lg"
+          className="mt-12 font-sans text-[15px] font-medium tracking-wide px-9 py-3.5 bg-[#2f3d26] text-white rounded-full hover:bg-[#3d5230] transition-all duration-300 shadow-[0_1px_2px_rgba(47,61,38,0.08),0_8px_24px_-4px_rgba(47,61,38,0.18)] hover:shadow-[0_4px_20px_-6px_rgba(47,61,38,0.35)]"
           style={{ opacity: ctaOpacity, y: ctaY }}
         >
           {cta.label}
