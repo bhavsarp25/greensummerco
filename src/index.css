@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Self-hosted font (optional). 1) Drop files in public/fonts/
+ * 2) Uncomment @font-face and set url() + font-weight to match your files.
+ * 3) Add class `font-display` only on elements that should use it.
+ * See public/fonts/README.md.
+ */
+/*
+@font-face {
+  font-family: 'SiteDisplay';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/your-file.woff2') format('woff2');
+}
+*/
+
 html {
   scroll-behavior: smooth;
 }
