@@ -76,7 +76,7 @@ export function ConvergingHeadline({
             className="block h-px bg-[#557042] origin-left"
             style={{ width: 64, scaleX: tendrilScale }}
           />
-          <span className="font-brand text-lg sm:text-xl md:text-2xl font-normal tracking-normal text-center max-w-[90vw]">
+          <span className="font-brand-force text-lg sm:text-xl md:text-2xl font-normal tracking-normal text-center max-w-[90vw]">
             {eyebrow}
           </span>
           <motion.span
@@ -113,7 +113,7 @@ export function ConvergingHeadline({
 
       {subtitle && (
         <motion.p
-          className="font-brand text-[#5a5855] text-center max-w-2xl text-lg md:text-2xl mt-8 font-normal"
+          className="font-brand-force text-[#5a5855] text-center max-w-2xl text-lg md:text-2xl mt-8 font-normal"
           style={{ opacity: subtitleOpacity, y: subtitleY }}
         >
           {subtitle}

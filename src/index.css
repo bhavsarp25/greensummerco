@@ -23,9 +23,8 @@ html {
   scroll-behavior: smooth;
 }
 
-body {
-  margin: 0;
-  font-family:
+:root {
+  --font-ui:
     'Google Sans Flex',
     ui-sans-serif,
     system-ui,
@@ -36,8 +35,22 @@ body {
     'Helvetica Neue',
     Arial,
     sans-serif;
+  --font-brand: 'Pinyon Script', cursive;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hard override for the exact user-requested script copy. */
+.font-brand-force {
+  font-family: var(--font-brand) !important;
+  font-weight: 400 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
 }
 
 @keyframes bounce-slow {

@@ -7,7 +7,7 @@ interface ClientsSectionProps {
 export function ClientsSection({ onClientClick }: ClientsSectionProps) {
   return (
     <div className="max-w-6xl mx-auto">
-      <h2 className="font-brand text-3xl md:text-5xl text-[#688952] mb-6 text-center font-normal">
+      <h2 className="font-brand-force text-3xl md:text-5xl text-[#688952] mb-6 text-center font-normal">
         Our Clients
       </h2>
       <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">
