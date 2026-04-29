@@ -27,7 +27,7 @@ export const clients: Client[] = [
   {
     id: 2,
     name: 'Shinobi Tech',
-    logo: '/clients/shinobi-tech.png',
+    logo: '/clients/shinobi-tech.jpeg',
     description:
       'A performance-driven tech brand blending bold identity design with product-led storytelling, focused on scaling visibility in competitive digital markets.',
     industry: 'Technology',
