@@ -24,7 +24,9 @@ export default function ParallaxImages({
   onImageClick,
 }: ParallaxImagesProps) {
   return (
-    <div className={`grid grid-flow-col place-content-center gap-8 p-0 ${className}`.trim()}>
+    <div
+      className={`grid grid-cols-1 sm:grid-cols-2 place-content-center justify-items-center gap-6 md:gap-8 p-0 ${className}`.trim()}
+    >
       {images.map((img, idx) => (
         <button
           key={img.id ?? idx}

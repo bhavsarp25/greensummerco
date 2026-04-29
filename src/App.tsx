@@ -211,21 +211,21 @@ export default function App() {
             </h2>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-10 md:mb-12">
             <Reveal from="left" delay={80}>
               <a
                 href="mailto:greensummercollective@gmail.com"
-                className="flex items-center justify-center gap-3 p-6 bg-[#D8CDB1]/20 rounded-lg hover:bg-[#D8CDB1]/30 transition-colors"
+                className="flex items-center justify-center gap-3 p-4 md:p-6 bg-[#D8CDB1]/20 rounded-lg hover:bg-[#D8CDB1]/30 transition-colors"
               >
                 <Mail className="text-[#557042]" size={24} />
-                <span className="text-gray-700">greensummercollective@gmail.com</span>
+                <span className="text-gray-700 break-all text-sm sm:text-base">greensummercollective@gmail.com</span>
               </a>
             </Reveal>
 
             <Reveal from="right" delay={80}>
               <a
                 href="tel:437-215-1855"
-                className="flex items-center justify-center gap-3 p-6 bg-[#D8CDB1]/20 rounded-lg hover:bg-[#D8CDB1]/30 transition-colors"
+                className="flex items-center justify-center gap-3 p-4 md:p-6 bg-[#D8CDB1]/20 rounded-lg hover:bg-[#D8CDB1]/30 transition-colors"
               >
                 <Phone className="text-[#557042]" size={24} />
                 <span className="text-gray-700">437-215-1855</span>
@@ -234,12 +234,12 @@ export default function App() {
           </div>
 
           <Reveal from="up" delay={200}>
-            <div className="flex items-center justify-center gap-6 flex-wrap">
+            <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/greensummerco/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors text-sm md:text-base"
                 title="Instagram"
               >
                 <Share2 size={20} />
@@ -249,19 +249,11 @@ export default function App() {
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors text-sm md:text-base"
                 title="LinkedIn"
               >
                 <Share2 size={20} />
                 <span>LinkedIn</span>
-              </a>
-              <a
-                href="mailto:greensummercollective@gmail.com"
-                className="flex items-center gap-2 px-6 py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors"
-                title="Email"
-              >
-                <Mail size={20} />
-                <span>Email</span>
               </a>
             </div>
           </Reveal>
