@@ -464,7 +464,7 @@ function SingleVine({ start, end, side, color, strokeWidth }: SingleVineProps) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none fixed ${positionClass} w-28 md:w-44 lg:w-52 z-10`}
+      className={`pointer-events-none fixed ${positionClass} w-28 md:w-44 lg:w-52 z-0`}
       style={{
         // Start the vine just under the GREEN SUMMER COLLECTIVE wordmark
         // (top-5 / md:top-7 + ~26px line height = ~46-56 px below page
@@ -744,7 +744,7 @@ export function LeafCorners({ sectionRef }: LeafCornersProps) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute top-0 left-0 right-0 z-[1] overflow-hidden"
+      className="pointer-events-none absolute top-0 left-0 right-0 z-0 overflow-hidden"
       style={{ height: '60vh' }}
     >
       {leftSrc && (
@@ -832,7 +832,7 @@ function PhotoVine({ src, start, end, side, mirrored }: PhotoVineProps) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none fixed ${positionClass} w-32 md:w-44 lg:w-52 z-10 overflow-hidden`}
+      className={`pointer-events-none fixed ${positionClass} w-32 md:w-44 lg:w-52 z-0 overflow-hidden`}
       style={{
         // Same wordmark-clearance offset as the SVG vine wrapper above,
         // so photo + SVG renderers stay visually aligned.
