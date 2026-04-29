@@ -103,7 +103,7 @@ export default function App() {
         <div className="max-w-4xl mx-auto">
           <Reveal from="up">
             <h2 className="font-brand-force text-3xl md:text-5xl text-[#557042] mb-10 text-center font-normal">
-              GREEN SUMMER COLLECTIVE
+              Green Summer Collective
             </h2>
           </Reveal>
           <div className="space-y-6 text-gray-700 leading-relaxed">
