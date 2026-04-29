@@ -54,7 +54,7 @@ export default function App() {
       <button
         type="button"
         onClick={() => scrollToSection('landing')}
-        className="fixed top-5 left-5 md:top-7 md:left-8 z-50 cursor-pointer text-[#3d5230] tracking-[0.18em] text-xs md:text-sm uppercase font-medium hover:text-[#557042] transition-colors"
+        className="font-brand fixed top-5 left-5 md:top-7 md:left-8 z-50 cursor-pointer text-[#3d5230] text-xl sm:text-2xl md:text-[1.65rem] font-normal hover:text-[#557042] transition-colors"
         aria-label="Green Summer Collective — back to top"
       >
         Green Summer Collective
@@ -102,7 +102,7 @@ export default function App() {
       <section id="about" className="py-24 px-6 bg-white">
         <div className="max-w-4xl mx-auto">
           <Reveal from="up">
-            <h2 className="text-3xl md:text-5xl text-[#557042] mb-10 text-center">
+            <h2 className="font-brand text-3xl md:text-5xl text-[#557042] mb-10 text-center font-normal">
               GREEN SUMMER COLLECTIVE
             </h2>
           </Reveal>
@@ -139,7 +139,7 @@ export default function App() {
               </p>
             </Reveal>
             <Reveal from="up" delay={330}>
-              <p className="text-[#557042] text-center pt-6">
+              <p className="font-brand text-[#557042] text-center pt-6 text-xl md:text-2xl font-normal">
                 Let's cultivate your digital future together.
               </p>
             </Reveal>
@@ -151,7 +151,7 @@ export default function App() {
       <section id="services" className="py-24 px-6 bg-gradient-to-b from-white to-[#D8CDB1]/10">
         <div className="max-w-6xl mx-auto">
           <Reveal from="up">
-            <h2 className="text-3xl md:text-5xl text-[#557042] mb-12 text-center">
+            <h2 className="font-brand text-3xl md:text-5xl text-[#557042] mb-12 text-center font-normal">
               Our Services
             </h2>
           </Reveal>
@@ -185,7 +185,9 @@ export default function App() {
       <section id="contact" className="py-24 px-6 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <Reveal from="up">
-            <h2 className="text-3xl md:text-5xl text-[#557042] mb-12">Get In Touch</h2>
+            <h2 className="font-brand text-3xl md:text-5xl text-[#557042] mb-12 font-normal">
+              Get In Touch
+            </h2>
           </Reveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
