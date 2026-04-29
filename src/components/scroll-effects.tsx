@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion';
-import { useRef } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 
 /**
  * --------------------------------------------------------------------------
@@ -197,11 +197,24 @@ function ConvergingChar({
  */
 interface GrowingVineProps {
   /**
-   * 0..1 cutoff: the vine starts drawing when document scroll progress
-   * passes `start` and is fully drawn at `end`.
+   * 0..1 cutoff in document scroll: the vine starts drawing when
+   * progress passes `start` and is fully drawn at `end`. Ignored
+   * when `startSelector` / `endSelector` are provided.
    */
   start?: number;
   end?: number;
+  /**
+   * CSS selector for the element whose top, when crossing the top of
+   * the viewport, marks the start of the vine animation. e.g. '#hero'.
+   * Falls back to the numeric `start` if the element can't be found.
+   */
+  startSelector?: string;
+  /**
+   * CSS selector for the element whose bottom, when crossing the
+   * bottom of the viewport, marks 100% drawn. e.g. '#contact'.
+   * Falls back to the numeric `end` if the element can't be found.
+   */
+  endSelector?: string;
   /**
    * Render the vine on a single side or mirrored on both sides
    * (default). 'mirror' produces a left + right pair so the page is
@@ -223,23 +236,74 @@ interface GrowingVineProps {
 export function GrowingVine({
   start = 0,
   end = 0.5,
+  startSelector,
+  endSelector,
   side = 'mirror',
   color = '#557042',
   strokeWidth = 3,
 }: GrowingVineProps) {
+  // Compute start/end as fractions of document scroll height by
+  // looking up the selector elements' offsets. Recomputed on resize
+  // since layout-driven values change with viewport size.
+  const [range, setRange] = useState<{ start: number; end: number }>({
+    start,
+    end,
+  });
+
+  useEffect(() => {
+    if (!startSelector && !endSelector) {
+      setRange({ start, end });
+      return;
+    }
+    function recompute() {
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) {
+        setRange({ start, end });
+        return;
+      }
+      let s = start;
+      let e = end;
+      if (startSelector) {
+        const el = document.querySelector(startSelector) as HTMLElement | null;
+        if (el) s = el.offsetTop / docHeight;
+      }
+      if (endSelector) {
+        const el = document.querySelector(endSelector) as HTMLElement | null;
+        if (el) {
+          // 100% drawn when the bottom of the end element has scrolled
+          // past the top of the viewport.
+          e = (el.offsetTop + el.offsetHeight - window.innerHeight) / docHeight;
+        }
+      }
+      // Sanity: clamp and keep at least a 0.05 gap between start/end.
+      s = Math.max(0, Math.min(0.95, s));
+      e = Math.max(s + 0.05, Math.min(1, e));
+      setRange({ start: s, end: e });
+    }
+    recompute();
+    window.addEventListener('resize', recompute, { passive: true });
+    // Layout settles after fonts / images load.
+    const t = setTimeout(recompute, 200);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', recompute);
+    };
+  }, [startSelector, endSelector, start, end]);
+
   if (side === 'mirror') {
     return (
       <>
         <SingleVine
-          start={start}
-          end={end}
+          start={range.start}
+          end={range.end}
           side="left"
           color={color}
           strokeWidth={strokeWidth}
         />
         <SingleVine
-          start={start}
-          end={end}
+          start={range.start}
+          end={range.end}
           side="right"
           color={color}
           strokeWidth={strokeWidth}
@@ -249,8 +313,8 @@ export function GrowingVine({
   }
   return (
     <SingleVine
-      start={start}
-      end={end}
+      start={range.start}
+      end={range.end}
       side={side}
       color={color}
       strokeWidth={strokeWidth}
@@ -269,30 +333,37 @@ interface SingleVineProps {
 function SingleVine({ start, end, side, color, strokeWidth }: SingleVineProps) {
   const { scrollYProgress } = useScroll();
   const pathLength = useTransform(scrollYProgress, [start, end], [0, 1]);
-  const branchLength = useTransform(scrollYProgress, [start + 0.04, end], [0, 1]);
+  const branchLength = useTransform(
+    scrollYProgress,
+    [start + (end - start) * 0.1, end],
+    [0, 1],
+  );
   const opacity = useTransform(
     scrollYProgress,
     [start, start + 0.02, end - 0.02, end + 0.05],
-    [0, 1, 1, 0.55],
+    [0, 1, 1, 0.85],
   );
 
-  // 6 leaves spread along the vine. Each leaf is a tuple of
-  // (x, y, rotation, scale). The growing-in animation is staggered so
-  // they appear sequentially as the vine draws past them.
+  // Helper: convert a 0..1 offset along the vine into an absolute
+  // document-scroll cutoff inside [start, end].
+  const at = (frac: number) => start + (end - start) * frac;
+
+  // 6 leaves spread along the vine, staggered so they appear sequentially
+  // as the vine draws past them. `t` is the position along the vine
+  // (0..1), not an absolute scroll cutoff — the helper above maps it.
   const leaves: Array<{ x: number; y: number; rot: number; scale: number; t: number }> = [
-    { x: 70, y: 130, rot: -38, scale: 1.0, t: 0.10 },
-    { x: 130, y: 230, rot: 32, scale: 0.85, t: 0.16 },
-    { x: 65, y: 330, rot: -26, scale: 1.15, t: 0.22 },
-    { x: 140, y: 430, rot: 44, scale: 0.9, t: 0.28 },
-    { x: 75, y: 540, rot: -34, scale: 1.05, t: 0.34 },
-    { x: 130, y: 660, rot: 30, scale: 0.95, t: 0.40 },
+    { x: 70, y: 130, rot: -38, scale: 1.0, t: at(0.18) },
+    { x: 130, y: 230, rot: 32, scale: 0.85, t: at(0.30) },
+    { x: 65, y: 330, rot: -26, scale: 1.15, t: at(0.42) },
+    { x: 140, y: 430, rot: 44, scale: 0.9, t: at(0.55) },
+    { x: 75, y: 540, rot: -34, scale: 1.05, t: at(0.68) },
+    { x: 130, y: 660, rot: 30, scale: 0.95, t: at(0.82) },
   ];
 
-  // Small berries / dot accents to add density without too much chrome.
   const berries: Array<{ x: number; y: number; r: number; t: number }> = [
-    { x: 110, y: 195, r: 3, t: 0.13 },
-    { x: 95, y: 405, r: 2.5, t: 0.27 },
-    { x: 115, y: 615, r: 3, t: 0.39 },
+    { x: 110, y: 195, r: 3, t: at(0.24) },
+    { x: 95, y: 405, r: 2.5, t: at(0.50) },
+    { x: 115, y: 615, r: 3, t: at(0.76) },
   ];
 
   const positionClass =
@@ -343,27 +414,27 @@ function SingleVine({ start, end, side, color, strokeWidth }: SingleVineProps) {
           d="M 70 170 q 20 -25 50 -10"
           fill="none"
           stroke={color}
-          strokeWidth={strokeWidth * 0.55}
+          strokeWidth={strokeWidth * 0.5}
           strokeLinecap="round"
-          opacity={0.7}
+          opacity={0.55}
           style={{ pathLength: branchLength }}
         />
         <motion.path
           d="M 130 320 q -25 -15 -55 -5"
           fill="none"
           stroke={color}
-          strokeWidth={strokeWidth * 0.55}
+          strokeWidth={strokeWidth * 0.5}
           strokeLinecap="round"
-          opacity={0.7}
+          opacity={0.55}
           style={{ pathLength: branchLength }}
         />
         <motion.path
           d="M 80 520 q 25 -20 55 -10"
           fill="none"
           stroke={color}
-          strokeWidth={strokeWidth * 0.55}
+          strokeWidth={strokeWidth * 0.5}
           strokeLinecap="round"
-          opacity={0.7}
+          opacity={0.55}
           style={{ pathLength: branchLength }}
         />
 
@@ -415,9 +486,11 @@ function AnimatedLeaf({
   color: string;
   scrollYProgress: MotionValue<number>;
 }) {
-  const grow = useTransform(scrollYProgress, [t, t + 0.08], [0, 1]);
-  const fade = useTransform(scrollYProgress, [t, t + 0.06], [0, 1]);
-  const sway = useTransform(scrollYProgress, [t, t + 0.5], [rot - 6, rot + 6]);
+  // 5% of total document scroll for the grow-in. Subsequent scrolling
+  // gives a slow rotational sway so leaves don't look frozen once drawn.
+  const grow = useTransform(scrollYProgress, [t, t + 0.05], [0, 1]);
+  const fade = useTransform(scrollYProgress, [t, t + 0.04], [0, 1]);
+  const sway = useTransform(scrollYProgress, [t, Math.min(1, t + 0.5)], [rot - 6, rot + 6]);
 
   return (
     <motion.g
@@ -444,8 +517,8 @@ function AnimatedBerry({
   color: string;
   scrollYProgress: MotionValue<number>;
 }) {
-  const grow = useTransform(scrollYProgress, [t, t + 0.06], [0, 1]);
-  const fade = useTransform(scrollYProgress, [t, t + 0.05], [0, 1]);
+  const grow = useTransform(scrollYProgress, [t, t + 0.04], [0, 1]);
+  const fade = useTransform(scrollYProgress, [t, t + 0.03], [0, 1]);
   return (
     <motion.circle
       cx={x}
@@ -457,37 +530,176 @@ function AnimatedBerry({
   );
 }
 
+/**
+ * --------------------------------------------------------------------------
+ * LeafCorners
+ * --------------------------------------------------------------------------
+ * Top-left + top-right corner foliage built from PNG / WebP cutouts the
+ * user has dropped into /public/leaves/. Each corner image fades and
+ * gently scales in as the user enters the section. The bottom edge of
+ * each image is the anchor point that the SVG vines grow out from, so
+ * the visual is "leaves at the top corners → vine tendrils growing
+ * down past them."
+ *
+ * Behaviour when no images are uploaded:
+ *   - Both slots stay empty.
+ *   - The vines still grow from the same anchor coordinates, just
+ *     without visible foliage at the top.
+ *
+ * Behaviour when only one image is uploaded:
+ *   - That image is used for both corners; the right copy is
+ *     CSS-mirrored (scaleX(-1)) so the leaves face inward on each side.
+ */
+interface LeafCornersProps {
+  /** ref to the section the leaves sit at the top of (e.g. the GROW BOLDLY
+   *  section) — used to drive the fade-in via the section's own scroll
+   *  progress, so the foliage appears as the section enters view. */
+  sectionRef: RefObject<HTMLElement | null>;
+}
+
+const LEFT_CANDIDATES = [
+  '/leaves/top-left.png',
+  '/leaves/top-left.webp',
+  '/leaves/leaves-left.png',
+  '/leaves/leaves-left.webp',
+];
+const RIGHT_CANDIDATES = [
+  '/leaves/top-right.png',
+  '/leaves/top-right.webp',
+  '/leaves/leaves-right.png',
+  '/leaves/leaves-right.webp',
+];
+
+export function LeafCorners({ sectionRef }: LeafCornersProps) {
+  const [leftSrc, setLeftSrc] = useState<string | null>(null);
+  const [rightSrc, setRightSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function probe(candidates: string[]): Promise<string | null> {
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+          if (!res.ok) continue;
+          const ct = (res.headers.get('content-type') ?? '').toLowerCase();
+          if (ct.startsWith('image/')) return url;
+        } catch {
+          // ignore network/parse errors
+        }
+      }
+      return null;
+    }
+
+    (async () => {
+      const [l, r] = await Promise.all([
+        probe(LEFT_CANDIDATES),
+        probe(RIGHT_CANDIDATES),
+      ]);
+      if (cancelled) return;
+      // If only one is uploaded, mirror it to the other side.
+      const left = l ?? r;
+      const right = r ?? l;
+      setLeftSrc(left);
+      setRightSrc(right);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Drive a soft fade + downward grow from the section's own scroll
+  // progress, so the leaves appear as the GROW BOLDLY section is
+  // entering the viewport.
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'center center'],
+  });
+  const opacity = useTransform(scrollYProgress, [0.0, 0.6], [0, 1]);
+  const yLeft = useTransform(scrollYProgress, [0.0, 0.6], [-32, 0]);
+  const yRight = useTransform(scrollYProgress, [0.0, 0.6], [-32, 0]);
+  const scaleLeft = useTransform(scrollYProgress, [0.0, 0.7], [0.92, 1]);
+  const scaleRight = useTransform(scrollYProgress, [0.0, 0.7], [0.92, 1]);
+
+  if (!leftSrc && !rightSrc) return null;
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute top-0 left-0 right-0 z-[1] overflow-hidden"
+      style={{ height: '60vh' }}
+    >
+      {leftSrc && (
+        <motion.img
+          src={leftSrc}
+          alt=""
+          className="absolute top-0 left-0 select-none"
+          style={{
+            opacity,
+            y: yLeft,
+            scale: scaleLeft,
+            width: 'min(46vw, 620px)',
+            maxHeight: '55vh',
+            objectFit: 'contain',
+            objectPosition: 'top left',
+            transformOrigin: 'top left',
+          }}
+          draggable={false}
+        />
+      )}
+      {rightSrc && (
+        <motion.img
+          src={rightSrc}
+          alt=""
+          className="absolute top-0 right-0 select-none"
+          style={{
+            opacity,
+            y: yRight,
+            scale: scaleRight,
+            width: 'min(46vw, 620px)',
+            maxHeight: '55vh',
+            objectFit: 'contain',
+            objectPosition: 'top right',
+            transformOrigin: 'top right',
+            // If only one image was supplied (leftSrc === rightSrc), flip
+            // the right copy so the foliage faces inward on each side.
+            transform: leftSrc === rightSrc ? 'scaleX(-1)' : undefined,
+          }}
+          draggable={false}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Outlineless leaf glyph. A solid asymmetric drop with a subtle
+ * darker tip so it reads as a real leaf instead of a flat blob.
+ * Caller is responsible for translate/rotate/scale.
+ */
 function Leaf({ color }: { color: string }) {
   return (
     <g>
-      {/* Soft fill for body. */}
       <path
-        d="M 0 0 C -12 -10, -28 -6, -34 8 C -28 22, -12 28, 0 32 C 12 28, 28 22, 34 8 C 28 -6, 12 -10, 0 0 Z"
+        d="M 0 0
+           C -10 -4, -22 4, -26 16
+           C -22 28, -8 36, 0 38
+           C 8 36, 22 28, 26 16
+           C 22 4, 10 -4, 0 0 Z"
         fill={color}
-        opacity={0.22}
+        fillOpacity={0.92}
       />
-      {/* Outline. */}
+      {/* Slightly darker tip for depth — same path scaled & translated,
+          painted with multiply via low-alpha black so it tints whatever
+          green the parent uses. */}
       <path
-        d="M 0 0 C -12 -10, -28 -6, -34 8 C -28 22, -12 28, 0 32 C 12 28, 28 22, 34 8 C 28 -6, 12 -10, 0 0 Z"
-        fill="none"
-        stroke={color}
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      {/* Central rib. */}
-      <path
-        d="M 0 0 L 0 32"
-        stroke={color}
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-      {/* Side veins. */}
-      <path
-        d="M 0 8 L -14 4 M 0 8 L 14 4 M 0 18 L -18 16 M 0 18 L 18 16 M 0 26 L -12 28 M 0 26 L 12 28"
-        stroke={color}
-        strokeWidth="0.9"
-        strokeLinecap="round"
-        opacity={0.7}
+        d="M 0 22
+           C -8 28, -14 32, -20 30
+           C -16 36, -8 38, 0 38
+           C 8 38, 16 36, 20 30
+           C 14 32, 8 28, 0 22 Z"
+        fill="#000"
+        fillOpacity={0.18}
       />
     </g>
   );
