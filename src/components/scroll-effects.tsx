@@ -444,8 +444,17 @@ function SingleVine({ start, end, side, color, strokeWidth }: SingleVineProps) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none fixed top-0 ${positionClass} h-screen w-28 md:w-44 lg:w-52 z-10`}
-      style={{ transform: side === 'right' ? 'scaleX(-1)' : undefined }}
+      className={`pointer-events-none fixed ${positionClass} w-28 md:w-44 lg:w-52 z-10`}
+      style={{
+        // Start the vine just under the GREEN SUMMER COLLECTIVE wordmark
+        // (top-5 / md:top-7 + ~26px line height = ~46-56 px below page
+        // top), so the foliage doesn't run behind the brand text.
+        // Height is calc(100vh - that offset) so the vine still
+        // visually reaches the bottom of the viewport.
+        top: 'clamp(72px, 9vh, 110px)',
+        height: 'calc(100vh - clamp(72px, 9vh, 110px))',
+        transform: side === 'right' ? 'scaleX(-1)' : undefined,
+      }}
     >
       <motion.svg
         viewBox="0 0 200 800"
@@ -786,8 +795,12 @@ function PhotoVine({ src, start, end, side, mirrored }: PhotoVineProps) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none fixed top-0 ${positionClass} h-screen w-32 md:w-44 lg:w-52 z-10 overflow-hidden`}
+      className={`pointer-events-none fixed ${positionClass} w-32 md:w-44 lg:w-52 z-10 overflow-hidden`}
       style={{
+        // Same wordmark-clearance offset as the SVG vine wrapper above,
+        // so photo + SVG renderers stay visually aligned.
+        top: 'clamp(72px, 9vh, 110px)',
+        height: 'calc(100vh - clamp(72px, 9vh, 110px))',
         transform: side === 'right' && mirrored ? 'scaleX(-1)' : undefined,
         // Subtle vertical drop-shadow gives the photo vine a tiny bit
         // of depth on light backgrounds without an outline.
