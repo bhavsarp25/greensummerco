@@ -2,16 +2,12 @@
 
 Put your **Google Sans Flex** font files from your zip in **this folder** (`public/fonts/google-sans-flex/`).
 
-## Required file name (easiest)
+## File name
 
-Rename your variable or regular **`.woff2`** to:
-
-`google-sans-flex.woff2`
-
-If you only have **`.ttf`**:
+The site expects:
 
 `google-sans-flex.ttf`
 
-`src/index.css` uses these paths for the global `body` font and Tailwind `font-sans`.
+`src/index.css` uses this path for the global `body` font and Tailwind `font-sans`.
 
-**Note:** If your download uses a long name (e.g. `GoogleSansFlex-VariableFont.woff2`), you can either rename it as above or edit the `url('/fonts/google-sans-flex/...')` lines in `src/index.css` to match your real filename.
+For a smaller payload later, add `google-sans-flex.woff2` list `format('woff2')` **before** the `ttf` line in `src/index.css`.
