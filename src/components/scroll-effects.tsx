@@ -294,9 +294,10 @@ export function GrowingVine({
       if (startSelector) {
         const el = document.querySelector(startSelector) as HTMLElement | null;
         if (el) {
-          // Begin the vine when the hero (#second page) reaches the top of
-          // the viewport — i.e. document scroll matches the hero's top.
-          s = layoutTop(el) / docHeight;
+          // Begin the vine as soon as the hero starts entering the viewport
+          // (its top reaches the viewport bottom), so growth is already
+          // visible on the GROW BOLDLY screen.
+          s = (layoutTop(el) - window.innerHeight) / docHeight;
         }
       }
       if (endSelector) {
@@ -718,17 +719,17 @@ export function LeafCorners({ sectionRef }: LeafCornersProps) {
     target: sectionRef,
     offset: ['start end', 'center center'],
   });
-  // Do not show corner foliage on the first (landing) page: #hero sits
-  // inside a wrapper, so its layout top was wrong for global scroll.
-  // Gate on the landing block's bottom leaving the viewport.
+  // Do not show corner foliage on the first (landing) page.
+  // Start revealing as soon as the hero begins entering the viewport,
+  // so leaves are visible on the GROW BOLDLY section.
   const pageTwoGate = useTransform(scrollY, (sy) => {
     const landing = document.querySelector('#landing');
     if (!(landing instanceof HTMLElement)) return 0;
     const vh = window.innerHeight;
     const landingBottomDoc = sy + landing.getBoundingClientRect().bottom;
-    const heroStartsWhen = landingBottomDoc - vh;
+    const heroStartsWhen = landingBottomDoc - vh * 1.05;
     if (sy < heroStartsWhen) return 0;
-    return Math.min(1, (sy - heroStartsWhen) / Math.max(1, vh * 0.35));
+    return Math.min(1, (sy - heroStartsWhen) / Math.max(1, vh * 0.25));
   });
   const opacityRaw = useTransform(scrollYProgress, [0.0, 0.6], [0, 1]);
   const opacity = useTransform([opacityRaw, pageTwoGate], ([a, g]) =>
