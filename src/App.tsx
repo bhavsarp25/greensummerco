@@ -115,8 +115,8 @@ export default function App() {
       </div>
 
       {/* About Section */}
-      <section id="about" className="py-24 px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
+      <section id="about" className="relative z-20 py-24 px-6 bg-white">
+        <div className="relative z-20 max-w-4xl mx-auto">
           <Reveal from="up">
             <h2 className="font-brand-force text-3xl md:text-5xl text-[#557042] mb-10 text-center font-normal">
               Green Summer Collective
@@ -164,8 +164,8 @@ export default function App() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-24 px-6 bg-gradient-to-b from-white to-[#D8CDB1]/10">
-        <div className="max-w-6xl mx-auto">
+      <section id="services" className="relative z-20 py-24 px-6 bg-gradient-to-b from-white to-[#D8CDB1]/10">
+        <div className="relative z-20 max-w-6xl mx-auto">
           <Reveal from="up">
             <h2 className="font-brand-force text-3xl md:text-5xl text-[#557042] mb-12 text-center font-normal">
               Our Services
@@ -196,15 +196,15 @@ export default function App() {
       </section>
 
       {/* Clients Section */}
-      <section id="clients" className="py-24 px-6 bg-white">
+      <section id="clients" className="relative z-20 py-24 px-6 bg-white">
         <Reveal from="up">
           <ClientsSection onClientClick={openClient} />
         </Reveal>
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 px-6 bg-white">
-        <div className="max-w-4xl mx-auto text-center">
+      <section id="contact" className="relative z-20 py-24 px-6 bg-white">
+        <div className="relative z-20 max-w-4xl mx-auto text-center">
           <Reveal from="up">
             <h2 className="font-brand-force text-3xl md:text-5xl text-[#557042] mb-12 font-normal">
               Get In Touch
