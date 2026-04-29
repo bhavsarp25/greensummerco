@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Menu, X, Mail, Phone, Share2 } from 'lucide-react';
 import { ClientsSection } from './components/clients-section';
 import { ClientDetail } from './components/client-detail';
 import { LogoLanding } from './components/logo-landing';
 import { Reveal } from './components/reveal';
-import { ConvergingHeadline, GrowingVine } from './components/scroll-effects';
+import {
+  ConvergingHeadline,
+  GrowingVine,
+  LeafCorners,
+} from './components/scroll-effects';
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
+  const heroSectionRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -94,30 +99,36 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Decorative vines that draw themselves as the user scrolls from
-          the landing into the early content. Mirrored on the left and
-          right edges so the page is framed symmetrically with leafy
-          growth. */}
-      <GrowingVine start={0.02} end={0.45} />
+      {/* Decorative vines that grow on both sides of the page, anchored
+          to the bottom-inside corners of the LeafCorners foliage above
+          the GROW BOLDLY section. Drawing starts as the user scrolls
+          PAST GROW BOLDLY (#hero) and is fully drawn by the time they
+          reach the contact section at the bottom of the page, so the
+          vines accompany the user through the rest of the site. */}
+      <GrowingVine startSelector="#hero" endSelector="#contact" />
 
       {/* Page 1: Landing — interactive 3D logo, full viewport, scroll-down hint */}
       <LogoLanding scrollTargetId="hero" />
 
       {/* Page 2: Hero — GROW BOLDLY. THRIVE DIGITALLY. with character
-          convergence on scroll-in. */}
-      <ConvergingHeadline
-        id="hero"
-        eyebrow="Welcome to Green Summer Collective"
-        lines={[
-          { text: 'GROW BOLDLY.', color: 'primary' },
-          { text: 'THRIVE DIGITALLY.', color: 'secondary' },
-        ]}
-        subtitle="Your partners in lasting digital prosperity."
-        cta={{
-          label: "Let's Grow Together",
-          onClick: () => scrollToSection('contact'),
-        }}
-      />
+          convergence on scroll-in, plus PNG leaves that fade in at the
+          top corners of the section (foliage from /public/leaves/). */}
+      <div ref={heroSectionRef} className="relative">
+        <LeafCorners sectionRef={heroSectionRef} />
+        <ConvergingHeadline
+          id="hero"
+          eyebrow="Welcome to Green Summer Collective"
+          lines={[
+            { text: 'GROW BOLDLY.', color: 'primary' },
+            { text: 'THRIVE DIGITALLY.', color: 'secondary' },
+          ]}
+          subtitle="Your partners in lasting digital prosperity."
+          cta={{
+            label: "Let's Grow Together",
+            onClick: () => scrollToSection('contact'),
+          }}
+        />
+      </div>
 
       {/* About Section */}
       <section id="about" className="py-24 px-6 bg-white">
