@@ -139,7 +139,7 @@ export default function App() {
               </p>
             </Reveal>
             <Reveal from="up" delay={330}>
-              <p className="font-brand-force text-[#557042] text-center pt-6 text-xl md:text-2xl font-normal">
+              <p className="font-brand-force text-[#557042] text-center pt-6 text-2xl md:text-3xl font-normal leading-tight">
                 Let's cultivate your digital future together.
               </p>
             </Reveal>

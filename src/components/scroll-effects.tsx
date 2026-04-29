@@ -113,7 +113,7 @@ export function ConvergingHeadline({
 
       {subtitle && (
         <motion.p
-          className="font-brand-force text-[#5a5855] text-center max-w-2xl text-lg md:text-2xl mt-8 font-normal"
+          className="font-brand-force text-[#5a5855] text-center max-w-2xl text-2xl md:text-3xl mt-8 font-normal"
           style={{ opacity: subtitleOpacity, y: subtitleY }}
         >
           {subtitle}
