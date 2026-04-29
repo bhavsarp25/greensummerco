@@ -161,6 +161,11 @@ export default function App() {
                 key={index}
                 from="up"
                 delay={(index % 3) * 80 + Math.floor(index / 3) * 40}
+                className={
+                  index === services.length - 1 && services.length % 3 === 1
+                    ? 'lg:col-start-2'
+                    : ''
+                }
               >
                 <div className="p-6 bg-white rounded-lg border border-[#D8CDB1] hover:border-[#557042] transition-colors hover:shadow-lg h-full">
                   <h3 className="text-xl text-[#557042] mb-3">
