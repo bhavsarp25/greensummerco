@@ -232,6 +232,19 @@ interface GrowingVineProps {
  * as the user scrolls. When side='mirror' (the default), the vine is
  * rendered twice — once on the left, once on the right with horizontal
  * symmetry — framing the page with leafy growth.
+ *
+ * Two renderers, picked at runtime:
+ *
+ *  1. PhotoVine. If a transparent vine image is present in
+ *     /public/vines/ (vine.png/.webp, ivy.png/.webp, or per-side
+ *     vine-left/vine-right.*), it is rendered as a photographic
+ *     vine masked by scroll progress so it grows downward as the user
+ *     scrolls. This produces the realistic look from the user's
+ *     reference photo.
+ *
+ *  2. SVG SingleVine. Stylised vector vine with hand-tuned leaves
+ *     and berries. Used when no image is uploaded, so the page is
+ *     never decoration-less.
  */
 export function GrowingVine({
   start = 0,
@@ -291,35 +304,94 @@ export function GrowingVine({
     };
   }, [startSelector, endSelector, start, end]);
 
+  // Probe for a custom photographic vine image. Per-side
+  // (vine-left.* / vine-right.*) overrides the generic vine.* / ivy.*.
+  const [photoSrc, setPhotoSrc] = useState<{
+    left: string | null;
+    right: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function isImage(url: string) {
+      try {
+        const res = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+        if (!res.ok) return false;
+        const ct = (res.headers.get('content-type') ?? '').toLowerCase();
+        return ct.startsWith('image/');
+      } catch {
+        return false;
+      }
+    }
+    async function firstImage(candidates: string[]) {
+      for (const url of candidates) {
+        if (await isImage(url)) return url;
+      }
+      return null;
+    }
+    (async () => {
+      const [explicitLeft, explicitRight, generic] = await Promise.all([
+        firstImage(['/vines/vine-left.png', '/vines/vine-left.webp']),
+        firstImage(['/vines/vine-right.png', '/vines/vine-right.webp']),
+        firstImage([
+          '/vines/vine.png',
+          '/vines/vine.webp',
+          '/vines/ivy.png',
+          '/vines/ivy.webp',
+        ]),
+      ]);
+      if (cancelled) return;
+      const left = explicitLeft ?? generic;
+      const right = explicitRight ?? generic;
+      setPhotoSrc({ left, right });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Renderer for one side — picks PhotoVine if an image was found for
+  // that side, otherwise falls back to the SVG SingleVine.
+  function renderSide(s: 'left' | 'right') {
+    const src = photoSrc ? (s === 'left' ? photoSrc.left : photoSrc.right) : null;
+    if (src) {
+      return (
+        <PhotoVine
+          src={src}
+          start={range.start}
+          end={range.end}
+          side={s}
+          // If only the generic image was uploaded (left === right), flip
+          // the right copy so the foliage faces inward on each side.
+          mirrored={
+            s === 'right' &&
+            !!photoSrc?.left &&
+            !!photoSrc?.right &&
+            photoSrc.left === photoSrc.right
+          }
+        />
+      );
+    }
+    return (
+      <SingleVine
+        start={range.start}
+        end={range.end}
+        side={s}
+        color={color}
+        strokeWidth={strokeWidth}
+      />
+    );
+  }
+
   if (side === 'mirror') {
     return (
       <>
-        <SingleVine
-          start={range.start}
-          end={range.end}
-          side="left"
-          color={color}
-          strokeWidth={strokeWidth}
-        />
-        <SingleVine
-          start={range.start}
-          end={range.end}
-          side="right"
-          color={color}
-          strokeWidth={strokeWidth}
-        />
+        {renderSide('left')}
+        {renderSide('right')}
       </>
     );
   }
-  return (
-    <SingleVine
-      start={range.start}
-      end={range.end}
-      side={side}
-      color={color}
-      strokeWidth={strokeWidth}
-    />
-  );
+  return renderSide(side);
 }
 
 interface SingleVineProps {
@@ -668,6 +740,76 @@ export function LeafCorners({ sectionRef }: LeafCornersProps) {
           draggable={false}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * PhotoVine
+ * --------------------------------------------------------------------------
+ * A photographic vine image (transparent PNG / WebP from /public/vines/)
+ * masked by scroll progress so it grows downward as the user scrolls.
+ *
+ * Implementation: the image sits inside a fixed-position wrapper at full
+ * height; a CSS `clip-path: inset(0 0 (100 - p)% 0)` reveals it from
+ * the top edge, so as the user scrolls the visible portion of the
+ * vine extends downward. The clip-path is animated by framer-motion
+ * driven by the document's scrollYProgress, mapped from [start, end]
+ * to [0%, 100%] revealed.
+ *
+ * The vine is positioned at the side edge of the viewport. For the
+ * 'right' side without a dedicated -right asset, the image is flipped
+ * via CSS scaleX(-1) so the leaves curl inward.
+ */
+interface PhotoVineProps {
+  src: string;
+  start: number;
+  end: number;
+  side: 'left' | 'right';
+  mirrored: boolean;
+}
+
+function PhotoVine({ src, start, end, side, mirrored }: PhotoVineProps) {
+  const { scrollYProgress } = useScroll();
+  const reveal = useTransform(scrollYProgress, [start, end], [0, 100]);
+  const clipBottom = useTransform(reveal, (p) => `${100 - p}%`);
+  const opacity = useTransform(
+    scrollYProgress,
+    [start, start + 0.02, end - 0.02, end + 0.05],
+    [0, 1, 1, 0.9],
+  );
+
+  const positionClass =
+    side === 'right' ? 'right-0 md:right-2' : 'left-0 md:left-2';
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none fixed top-0 ${positionClass} h-screen w-32 md:w-44 lg:w-52 z-10 overflow-hidden`}
+      style={{
+        transform: side === 'right' && mirrored ? 'scaleX(-1)' : undefined,
+        // Subtle vertical drop-shadow gives the photo vine a tiny bit
+        // of depth on light backgrounds without an outline.
+        filter:
+          'drop-shadow(0 2px 4px rgba(85, 112, 66, 0.15)) drop-shadow(0 0 1px rgba(0,0,0,0.1))',
+      }}
+    >
+      <motion.img
+        src={src}
+        alt=""
+        draggable={false}
+        className="absolute inset-0 w-full h-full select-none"
+        style={{
+          objectFit: 'cover',
+          objectPosition: 'top center',
+          // clip-path inset: top right bottom left.
+          // We reveal from the top, so bottom is the animated value.
+          clipPath: useTransform(clipBottom, (b) => `inset(0 0 ${b} 0)`),
+          WebkitClipPath: useTransform(clipBottom, (b) => `inset(0 0 ${b} 0)`),
+          opacity,
+        }}
+      />
     </div>
   );
 }
