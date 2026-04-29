@@ -12,7 +12,7 @@ export const clients: Client[] = [
   {
     id: 1,
     name: 'Gracie Jiu-Jitsu Bolton',
-    logo: '/clients/gracie-jiu-jitsu.png',
+    logo: '/clients/gracie-jiu-jitsu-bolton.png',
     description:
       'A martial arts academy focused on Brazilian Jiu-Jitsu fundamentals, competition training, and confidence-building programs for all ages in Bolton.',
     industry: 'Martial Arts & Fitness',
