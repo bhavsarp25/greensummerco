@@ -70,7 +70,7 @@ export default function App() {
       <button
         type="button"
         onClick={() => scrollToSection('landing')}
-        className="font-brand-force fixed top-5 left-5 md:top-7 md:left-8 z-50 cursor-pointer text-[#3d5230] text-xl sm:text-2xl md:text-[1.65rem] font-normal hover:text-[#557042] transition-colors"
+        className="font-sans md:font-brand-force fixed top-5 left-5 md:top-7 md:left-8 z-50 cursor-pointer text-[#3d5230] text-base sm:text-lg md:text-[1.65rem] font-medium md:font-normal hover:text-[#557042] transition-colors"
         aria-label="Green Summer Collective — back to top"
       >
         Green Summer Collective

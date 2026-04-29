@@ -69,25 +69,25 @@ export function ConvergingHeadline({
     >
       {eyebrow && (
         <motion.div
-          className="flex items-center gap-3 mb-8 text-[#557042]"
+          className="flex items-center gap-2 sm:gap-3 mb-7 sm:mb-8 text-[#557042] px-2"
           style={{ opacity: eyebrowOpacity, y: eyebrowY }}
         >
           <motion.span
             className="block h-px bg-[#557042] origin-left"
-            style={{ width: 64, scaleX: tendrilScale }}
+            style={{ width: 56, scaleX: tendrilScale }}
           />
-          <span className="font-brand-force text-lg sm:text-xl md:text-2xl font-normal tracking-normal text-center max-w-[90vw]">
+          <span className="font-brand-force text-[1.5rem] sm:text-xl md:text-2xl text-[#3f5232] font-normal tracking-normal text-center max-w-[70vw] sm:max-w-[90vw] leading-tight">
             {eyebrow}
           </span>
           <motion.span
             className="block h-px bg-[#557042] origin-right"
-            style={{ width: 64, scaleX: tendrilScale }}
+            style={{ width: 56, scaleX: tendrilScale }}
           />
         </motion.div>
       )}
 
       <h1
-        className="text-5xl md:text-7xl lg:text-8xl text-center leading-[1.02] tracking-tight"
+        className="text-center leading-[1.02] tracking-tight"
         style={{ perspective: '600px' }}
       >
         {lines.map((line, lineIdx) => {
@@ -96,7 +96,10 @@ export function ConvergingHeadline({
           const colorClass =
             line.color === 'secondary' ? 'text-gray-800' : 'text-[#557042]';
           return (
-            <span key={lineIdx} className={`block ${colorClass}`}>
+            <span
+              key={lineIdx}
+              className={`block ${colorClass} text-[clamp(2.55rem,8.6vw,4.6rem)] md:text-7xl lg:text-8xl whitespace-nowrap`}
+            >
               {chars.map((c, i) => (
                 <ConvergingChar
                   key={`${lineIdx}-${i}`}
@@ -113,7 +116,7 @@ export function ConvergingHeadline({
 
       {subtitle && (
         <motion.p
-          className="font-brand-force text-[#5a5855] text-center max-w-2xl text-2xl md:text-3xl mt-8 font-normal"
+          className="font-brand-force text-[#4a4a48] text-center max-w-2xl text-[1.9rem] sm:text-3xl md:text-3xl mt-7 sm:mt-8 font-normal leading-tight"
           style={{ opacity: subtitleOpacity, y: subtitleY }}
         >
           {subtitle}

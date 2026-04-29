@@ -53,6 +53,14 @@ body {
   text-transform: none !important;
 }
 
+/* Slightly stronger script rendering on small phones for readability. */
+@media (max-width: 640px) {
+  .font-brand-force {
+    font-weight: 500 !important;
+    color: rgba(61, 82, 48, 0.95);
+  }
+}
+
 @keyframes bounce-slow {
   0%, 100% {
     transform: translateY(0);
