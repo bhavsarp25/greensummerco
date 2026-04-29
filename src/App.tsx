@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Menu, X, Mail, Phone, Share2 } from 'lucide-react';
+import { Mail, Phone, Share2 } from 'lucide-react';
 import { ClientsSection } from './components/clients-section';
 import { ClientDetail } from './components/client-detail';
 import { LogoLanding } from './components/logo-landing';
@@ -9,9 +9,9 @@ import {
   GrowingVine,
   LeafCorners,
 } from './components/scroll-effects';
+import { LiquidGlassMenu } from './components/liquid-glass-menu';
 
 export default function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const heroSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -19,9 +19,17 @@ export default function App() {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
-      setMenuOpen(false);
     }
   };
+
+  const navItems = [
+    { id: 'landing', label: 'Home' },
+    { id: 'hero', label: 'Welcome' },
+    { id: 'about', label: 'About' },
+    { id: 'services', label: 'Services' },
+    { id: 'clients', label: 'Our Clients' },
+    { id: 'contact', label: 'Contact' },
+  ];
 
   // If a client is selected, show the client detail page
   if (selectedClient !== null) {
@@ -40,64 +48,26 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-sm border-b border-[#D8CDB1]/30">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="text-[#557042] cursor-pointer tracking-wide" onClick={() => scrollToSection('landing')}>
-              GREEN SUMMER COLLECTIVE
-            </div>
+      {/* Wordmark — top-left, always visible, no banner. Sits on top
+          of whatever the landing wallpaper / 3D logo is rendering, then
+          sits on top of regular page content as the user scrolls. */}
+      <button
+        type="button"
+        onClick={() => scrollToSection('landing')}
+        className="fixed top-5 left-5 md:top-7 md:left-8 z-50 cursor-pointer text-[#3d5230] tracking-[0.18em] text-xs md:text-sm uppercase font-medium hover:text-[#557042] transition-colors"
+        aria-label="Green Summer Collective — back to top"
+      >
+        Green Summer Collective
+      </button>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
-              <button onClick={() => scrollToSection('hero')} className="text-gray-700 hover:text-[#557042] transition-colors">
-                Home
-              </button>
-              <button onClick={() => scrollToSection('about')} className="text-gray-700 hover:text-[#557042] transition-colors">
-                About
-              </button>
-              <button onClick={() => scrollToSection('services')} className="text-gray-700 hover:text-[#557042] transition-colors">
-                Services
-              </button>
-              <button onClick={() => scrollToSection('clients')} className="text-gray-700 hover:text-[#557042] transition-colors">
-                Our Clients
-              </button>
-              <button onClick={() => scrollToSection('contact')} className="text-gray-700 hover:text-[#557042] transition-colors">
-                Contact
-              </button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              className="md:hidden text-[#557042]"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              {menuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-
-          {/* Mobile Menu */}
-          {menuOpen && (
-            <div className="md:hidden mt-4 pb-4 flex flex-col gap-4">
-              <button onClick={() => scrollToSection('hero')} className="text-left text-gray-700 hover:text-[#557042] transition-colors">
-                Home
-              </button>
-              <button onClick={() => scrollToSection('about')} className="text-left text-gray-700 hover:text-[#557042] transition-colors">
-                About
-              </button>
-              <button onClick={() => scrollToSection('services')} className="text-left text-gray-700 hover:text-[#557042] transition-colors">
-                Services
-              </button>
-              <button onClick={() => scrollToSection('clients')} className="text-left text-gray-700 hover:text-[#557042] transition-colors">
-                Our Clients
-              </button>
-              <button onClick={() => scrollToSection('contact')} className="text-left text-gray-700 hover:text-[#557042] transition-colors">
-                Contact
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
+      {/* Liquid-glass menu — fades in once the user scrolls past the
+          landing section, opens into a glass dropdown of nav links with
+          per-character stagger-flip animation on hover. */}
+      <LiquidGlassMenu
+        items={navItems}
+        onNavigate={scrollToSection}
+        fadeInAfterSelector="#landing"
+      />
 
       {/* Decorative vines that grow on both sides of the page, anchored
           to the bottom-inside corners of the LeafCorners foliage above
