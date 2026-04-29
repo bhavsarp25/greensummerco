@@ -12,7 +12,7 @@ export const clients: Client[] = [
   {
     id: 1,
     name: 'Gracie Jiu-Jitsu Bolton',
-    logo: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&h=800&fit=crop',
+    logo: '/clients/gracie-jiu-jitsu.png',
     description:
       'A martial arts academy focused on Brazilian Jiu-Jitsu fundamentals, competition training, and confidence-building programs for all ages in Bolton.',
     industry: 'Martial Arts & Fitness',
@@ -27,7 +27,7 @@ export const clients: Client[] = [
   {
     id: 2,
     name: 'Shinobi Tech',
-    logo: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop',
+    logo: '/clients/shinobi-tech.png',
     description:
       'A performance-driven tech brand blending bold identity design with product-led storytelling, focused on scaling visibility in competitive digital markets.',
     industry: 'Technology',

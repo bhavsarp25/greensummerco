@@ -13,7 +13,7 @@ interface ParallaxImagesProps {
   className?: string;
   imageClassName?: string;
   tileClassName?: string;
-  onImageClick?: (idx: number) => void;
+  onImageClick?: (id: number | string) => void;
 }
 
 export default function ParallaxImages({
@@ -36,7 +36,7 @@ export default function ParallaxImages({
               ['--r' as string]: img.r,
             } as CSSProperties
           }
-          onClick={() => onImageClick?.(idx)}
+          onClick={() => onImageClick?.(img.id ?? idx)}
           onPointerMove={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width - 0.5) * 18;
