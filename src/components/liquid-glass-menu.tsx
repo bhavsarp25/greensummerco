@@ -136,8 +136,8 @@ export function LiquidGlassMenu({
         }}
         active={open}
       >
-        <span className="flex items-center gap-2 text-[#3d5230]">
-          <span className="hidden sm:inline tracking-[0.18em] text-xs uppercase font-medium">
+        <span className="flex items-center gap-2 text-[#557042]">
+          <span className="hidden sm:inline tracking-[0.18em] text-xs uppercase font-medium text-[#557042]">
             Menu
           </span>
           <span className="relative w-5 h-5">
@@ -188,7 +188,7 @@ export function LiquidGlassMenu({
                       <button
                         type="button"
                         onClick={() => handleSelect(item.id)}
-                        className="group block w-full text-left px-6 py-2.5 text-[#3d5230] hover:bg-white/30 transition-colors"
+                        className="group block w-full text-left px-6 py-2.5 text-[#557042] hover:text-[#2f3d26] hover:bg-white/35 transition-colors"
                       >
                         <TextStaggerHover
                           text={item.label}
@@ -391,14 +391,14 @@ const TextStaggerHover = forwardRef<HTMLSpanElement, TextStaggerHoverProps>(
               }}
             >
               <motion.span
-                className="inline-block opacity-30"
+                className="inline-block text-[#557042]"
                 initial={{ y: '0%' }}
                 animate={isActive ? { y: '-110%' } : { y: '0%' }}
               >
                 {ch === ' ' ? '\u00A0' : ch}
               </motion.span>
               <motion.span
-                className="absolute left-0 top-0 inline-block opacity-100"
+                className="absolute left-0 top-0 inline-block text-[#2f3d26]"
                 initial={{ y: '110%' }}
                 animate={isActive ? { y: '0%' } : { y: '110%' }}
               >
