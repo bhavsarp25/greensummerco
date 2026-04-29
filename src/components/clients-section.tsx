@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { clients } from './client-data';
 
 interface ClientsSectionProps {
@@ -5,6 +6,12 @@ interface ClientsSectionProps {
 }
 
 export function ClientsSection({ onClientClick }: ClientsSectionProps) {
+  const parallaxPresets = [
+    { f: 0.1, r: '16px' },
+    { f: 0.12, r: '10px' },
+    { f: 0.08, r: '22px' },
+  ] as const;
+
   return (
     <div className="max-w-6xl mx-auto">
       <h2 className="font-brand-force text-3xl md:text-5xl text-[#688952] mb-6 text-center font-normal">
@@ -16,17 +23,32 @@ export function ClientsSection({ onClientClick }: ClientsSectionProps) {
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
-        {clients.map((client) => (
+        {clients.map((client, index) => {
+          const preset = parallaxPresets[index % parallaxPresets.length];
+          return (
           <button
             key={client.id}
             onClick={() => onClientClick(client.id)}
             className="group flex flex-col items-center p-6 bg-white rounded-lg border-2 border-[#D8CDB1] hover:border-[#688952] transition-all hover:shadow-lg transform hover:-translate-y-1"
           >
-            <div className="w-32 h-32 mb-4 rounded-full overflow-hidden bg-gray-100">
+            <div
+              className="parallax-frame w-32 h-32 mb-4 overflow-hidden bg-gray-100"
+              style={
+                {
+                  ['--r' as string]: preset.r,
+                } as CSSProperties
+              }
+            >
               <img
                 src={client.logo}
                 alt={`${client.name} logo`}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                className="parallax-img w-full h-full object-cover"
+                style={
+                  {
+                    ['--f' as string]: preset.f,
+                    ['--r' as string]: preset.r,
+                  } as CSSProperties
+                }
               />
             </div>
             <h3 className="text-xl text-[#688952] text-center group-hover:underline">
@@ -34,7 +56,8 @@ export function ClientsSection({ onClientClick }: ClientsSectionProps) {
             </h3>
             <p className="text-sm text-gray-500 mt-1">{client.industry}</p>
           </button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
