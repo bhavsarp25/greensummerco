@@ -431,10 +431,12 @@ function SingleVine({ start, end, side, color, strokeWidth }: SingleVineProps) {
     [start + (end - start) * 0.1, end],
     [0, 1],
   );
+  // Keep vines visible as soon as hero starts; avoid fade-in "disappearing"
+  // look right at section entry. Only apply a slight tail fade near the end.
   const opacity = useTransform(
     scrollYProgress,
-    [start, start + 0.02, end - 0.02, end + 0.05],
-    [0, 1, 1, 0.85],
+    [start - 0.02, start, end - 0.02, end + 0.05],
+    [0.95, 0.95, 0.95, 0.88],
   );
 
   // Helper: convert a 0..1 offset along the vine into an absolute
@@ -731,7 +733,9 @@ export function LeafCorners({ sectionRef }: LeafCornersProps) {
     if (sy < heroStartsWhen) return 0;
     return Math.min(1, (sy - heroStartsWhen) / Math.max(1, vh * 0.25));
   });
-  const opacityRaw = useTransform(scrollYProgress, [0.0, 0.6], [0, 1]);
+  // Leaves should already be visible when the hero appears (desktop/tablet),
+  // so avoid ramping from fully transparent at the start.
+  const opacityRaw = useTransform(scrollYProgress, [0.0, 0.2], [0.88, 1]);
   const opacity = useTransform([opacityRaw, pageTwoGate], ([a, g]) =>
     Number(a) * Number(g),
   );
@@ -823,8 +827,8 @@ function PhotoVine({ src, start, end, side, mirrored }: PhotoVineProps) {
   const clipBottom = useTransform(reveal, (p) => `${100 - p}%`);
   const opacity = useTransform(
     scrollYProgress,
-    [start, start + 0.02, end - 0.02, end + 0.05],
-    [0, 1, 1, 0.9],
+    [start - 0.02, start, end - 0.02, end + 0.05],
+    [0.95, 0.95, 0.95, 0.9],
   );
 
   const positionClass =
