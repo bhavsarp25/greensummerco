@@ -22,16 +22,16 @@ export function ClientsSection({ onClientClick }: ClientsSectionProps) {
         Click on any client to learn more about their success story.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 place-content-center gap-8 px-2 sm:px-0">
-        {clients.map((client, index) => {
+      <div className="grid grid-cols-1 md:grid-flow-col place-content-center gap-8 px-2 sm:px-0">
+        {clients.slice(0, 3).map((client, index) => {
           const preset = parallaxPresets[index % parallaxPresets.length];
           return (
             <button
               key={client.id}
               onClick={() => onClientClick(client.id)}
-              className="parallax-card group flex flex-col items-center gap-3 text-center transition-transform duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 text-center"
             >
-              <div className="overflow-hidden">
+              <div className="parallax-tile overflow-hidden">
                 <img
                   src={client.logo}
                   alt={`${client.name} logo`}
