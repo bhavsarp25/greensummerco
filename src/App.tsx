@@ -47,14 +47,14 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#faf8f5] text-[#2c2825] antialiased">
       {/* Wordmark — top-left, always visible, no banner. Sits on top
           of whatever the landing wallpaper / 3D logo is rendering, then
           sits on top of regular page content as the user scrolls. */}
       <button
         type="button"
         onClick={() => scrollToSection('landing')}
-        className="fixed top-5 left-5 md:top-7 md:left-8 z-50 cursor-pointer text-[#3d5230] tracking-[0.18em] text-xs md:text-sm uppercase font-medium hover:text-[#557042] transition-colors"
+        className="fixed top-5 left-5 md:top-7 md:left-8 z-50 cursor-pointer font-display text-[1.05rem] sm:text-[1.15rem] md:text-xl text-[#2f3d26] tracking-[-0.01em] italic hover:text-[#557042] transition-colors duration-300"
         aria-label="Green Summer Collective — back to top"
       >
         Green Summer Collective
@@ -101,14 +101,17 @@ export default function App() {
       </div>
 
       {/* About Section */}
-      <section id="about" className="py-24 px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
+      <section id="about" className="py-28 md:py-32 px-6 sm:px-10 bg-[#faf8f5]">
+        <div className="max-w-3xl mx-auto">
           <Reveal from="up">
-            <h2 className="text-3xl md:text-5xl text-[#557042] mb-10 text-center">
-              GREEN SUMMER COLLECTIVE
+            <p className="font-sans text-center text-[11px] sm:text-xs font-medium tracking-[0.22em] uppercase text-[#557042]/80 mb-5">
+              About
+            </p>
+            <h2 className="font-display not-italic text-[2.25rem] sm:text-[2.75rem] md:text-[3.25rem] text-[#2f3d26] mb-12 text-center leading-[1.08] tracking-[-0.03em]">
+              Green Summer Collective
             </h2>
           </Reveal>
-          <div className="space-y-6 text-gray-700 leading-relaxed">
+          <div className="space-y-7 text-[#5c5a55] text-[17px] leading-[1.7] font-normal">
             <Reveal from="up" delay={50}>
               <p>
                 At Green Summer Collective, we believe in the power of digital growth that is both fresh and enduring.
@@ -141,7 +144,7 @@ export default function App() {
               </p>
             </Reveal>
             <Reveal from="up" delay={330}>
-              <p className="text-[#557042] text-center pt-6">
+              <p className="font-display not-italic text-[#3d5230] text-center text-xl md:text-2xl pt-8 leading-snug tracking-[-0.02em]">
                 Let's cultivate your digital future together.
               </p>
             </Reveal>
@@ -150,25 +153,31 @@ export default function App() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-24 px-6 bg-gradient-to-b from-white to-[#D8CDB1]/10">
+      <section id="services" className="py-28 md:py-32 px-6 sm:px-10 bg-[#f3efe8]">
         <div className="max-w-6xl mx-auto">
           <Reveal from="up">
-            <h2 className="text-3xl md:text-5xl text-[#557042] mb-12 text-center">
-              Our Services
+            <p className="font-sans text-center text-[11px] sm:text-xs font-medium tracking-[0.22em] uppercase text-[#557042]/80 mb-5">
+              What we do
+            </p>
+            <h2 className="font-display not-italic text-[2.25rem] sm:text-[2.75rem] md:text-[3.5rem] text-[#2f3d26] mb-4 text-center leading-[1.08] tracking-[-0.03em]">
+              Our services
             </h2>
+            <p className="font-sans text-center text-[#6b6863] max-w-lg mx-auto mb-16 text-[15px] md:text-base leading-relaxed">
+              Full-stack creative support built to feel like an in-house team.
+            </p>
           </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
             {services.map((service, index) => (
               <Reveal
                 key={index}
                 from="up"
                 delay={(index % 3) * 80 + Math.floor(index / 3) * 40}
               >
-                <div className="p-6 bg-white rounded-lg border border-[#D8CDB1] hover:border-[#557042] transition-colors hover:shadow-lg h-full">
-                  <h3 className="text-xl text-[#557042] mb-3">
+                <div className="group p-8 md:p-9 bg-white/70 backdrop-blur-sm rounded-2xl border border-[#e8e2d8] shadow-[0_1px_0_rgba(255,255,255,0.8)_inset,0_24px_48px_-28px_rgba(47,61,38,0.12)] hover:border-[#d4cdc1] hover:shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_32px_56px_-24px_rgba(47,61,38,0.16)] transition-all duration-300 h-full">
+                  <h3 className="font-display not-italic text-xl md:text-[1.35rem] text-[#2f3d26] mb-3 tracking-[-0.02em] leading-snug">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600">{service.description}</p>
+                  <p className="text-[#6b6863] text-[15px] leading-relaxed">{service.description}</p>
                 </div>
               </Reveal>
             ))}
@@ -177,69 +186,77 @@ export default function App() {
       </section>
 
       {/* Clients Section */}
-      <section id="clients" className="py-24 px-6 bg-white">
+      <section id="clients" className="py-28 md:py-32 px-6 sm:px-10 bg-[#faf8f5]">
         <Reveal from="up">
           <ClientsSection onClientClick={(clientId) => setSelectedClient(clientId)} />
         </Reveal>
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 px-6 bg-white">
-        <div className="max-w-4xl mx-auto text-center">
+      <section id="contact" className="py-28 md:py-32 px-6 sm:px-10 bg-[#f3efe8]">
+        <div className="max-w-3xl mx-auto text-center">
           <Reveal from="up">
-            <h2 className="text-3xl md:text-5xl text-[#557042] mb-12">Get In Touch</h2>
+            <p className="font-sans text-[11px] sm:text-xs font-medium tracking-[0.22em] uppercase text-[#557042]/80 mb-5">
+              Contact
+            </p>
+            <h2 className="font-display not-italic text-[2.25rem] sm:text-[2.75rem] md:text-[3.5rem] text-[#2f3d26] mb-4 leading-[1.08] tracking-[-0.03em]">
+              Get in touch
+            </h2>
+            <p className="font-sans text-[#6b6863] max-w-md mx-auto mb-14 text-[15px] leading-relaxed">
+              Tell us what you're building — we'll help it grow.
+            </p>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-14">
             <Reveal from="left" delay={80}>
               <a
                 href="mailto:greensummercollective@gmail.com"
-                className="flex items-center justify-center gap-3 p-6 bg-[#D8CDB1]/20 rounded-lg hover:bg-[#D8CDB1]/30 transition-colors"
+                className="flex items-center justify-center gap-3 p-6 md:p-7 bg-white/70 backdrop-blur-sm rounded-2xl border border-[#e8e2d8] text-[#3d392f] hover:border-[#d4cdc1] shadow-[0_20px_40px_-32px_rgba(47,61,38,0.25)] transition-all duration-300 font-sans text-[15px]"
               >
-                <Mail className="text-[#557042]" size={24} />
-                <span className="text-gray-700">greensummercollective@gmail.com</span>
+                <Mail className="text-[#557042] shrink-0" size={22} />
+                <span className="break-all text-left sm:text-center">greensummercollective@gmail.com</span>
               </a>
             </Reveal>
 
             <Reveal from="right" delay={80}>
               <a
                 href="tel:437-215-1855"
-                className="flex items-center justify-center gap-3 p-6 bg-[#D8CDB1]/20 rounded-lg hover:bg-[#D8CDB1]/30 transition-colors"
+                className="flex items-center justify-center gap-3 p-6 md:p-7 bg-white/70 backdrop-blur-sm rounded-2xl border border-[#e8e2d8] text-[#3d392f] hover:border-[#d4cdc1] shadow-[0_20px_40px_-32px_rgba(47,61,38,0.25)] transition-all duration-300 font-sans text-[15px]"
               >
-                <Phone className="text-[#557042]" size={24} />
-                <span className="text-gray-700">437-215-1855</span>
+                <Phone className="text-[#557042] shrink-0" size={22} />
+                <span>437-215-1855</span>
               </a>
             </Reveal>
           </div>
 
           <Reveal from="up" delay={200}>
-            <div className="flex items-center justify-center gap-6 flex-wrap">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors"
+                className="font-sans text-sm font-medium flex items-center gap-2 px-6 py-3 bg-[#2f3d26] text-white rounded-full hover:bg-[#3d5230] transition-all duration-300 shadow-[0_8px_24px_-8px_rgba(47,61,38,0.4)]"
                 title="Instagram"
               >
-                <Share2 size={20} />
+                <Share2 size={18} />
                 <span>Instagram</span>
               </a>
               <a
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors"
+                className="font-sans text-sm font-medium flex items-center gap-2 px-6 py-3 bg-[#2f3d26] text-white rounded-full hover:bg-[#3d5230] transition-all duration-300 shadow-[0_8px_24px_-8px_rgba(47,61,38,0.4)]"
                 title="LinkedIn"
               >
-                <Share2 size={20} />
+                <Share2 size={18} />
                 <span>LinkedIn</span>
               </a>
               <a
                 href="mailto:greensummercollective@gmail.com"
-                className="flex items-center gap-2 px-6 py-3 bg-[#557042] text-white rounded-full hover:bg-[#557042]/90 transition-colors"
+                className="font-sans text-sm font-medium flex items-center gap-2 px-6 py-3 bg-white text-[#2f3d26] rounded-full border border-[#e0d9ce] hover:border-[#c9c0b2] hover:bg-[#faf8f5] transition-all duration-300"
                 title="Email"
               >
-                <Mail size={20} />
+                <Mail size={18} />
                 <span>Email</span>
               </a>
             </div>
@@ -248,9 +265,11 @@ export default function App() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-6 bg-[#557042] text-white text-center">
-        <p>© 2026 Green Summer Collective. All rights reserved.</p>
-        <p className="mt-2 text-sm opacity-80">Your Partners in Lasting Digital Prosperity</p>
+      <footer className="py-14 px-6 bg-[#2a3224] text-white/95 text-center border-t border-white/[0.06]">
+        <p className="font-sans text-[13px] tracking-wide text-white/90">© 2026 Green Summer Collective. All rights reserved.</p>
+        <p className="mt-3 font-display not-italic text-lg text-white/70 tracking-[-0.02em]">
+          Your partners in lasting digital prosperity
+        </p>
       </footer>
     </div>
   );

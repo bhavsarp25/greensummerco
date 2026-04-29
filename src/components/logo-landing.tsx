@@ -180,7 +180,9 @@ export function LogoLanding({
           pointerEvents: scrollPct > 0.4 ? 'none' : 'auto',
         }}
       >
-        <span className="text-xs tracking-[0.3em] uppercase">Scroll</span>
+        <span className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.28em] uppercase text-[#3d5230]/75">
+          Scroll
+        </span>
         <ChevronDown size={28} className="animate-bounce-slow" />
       </button>
     </section>
