@@ -25,12 +25,27 @@ Live (when GitHub Pages is configured — see Deployment): <https://bhavsarp25.g
 git clone https://github.com/bhavsarp25/greensummerco.git
 cd greensummerco
 npm install
-npm run dev          # http://localhost:5173/
+VITE_BASE=/ npm run dev        # http://localhost:5173/
 ```
 
 The dev server binds `0.0.0.0:5173` (so it's reachable from a LAN /
 container / cloud agent), with a fixed port so URLs are stable across
 restarts. Hot module reload is enabled.
+
+> **Why `VITE_BASE=/`?** The default `base` in `vite.config.ts` is
+> `/greensummerco/` because the production deploy target is the GitHub
+> Pages project URL `bhavsarp25.github.io/greensummerco/`. In dev that
+> would mean visiting `http://localhost:5173/greensummerco/` — fine if
+> you remember, annoying if you don't. Setting `VITE_BASE=/` for the
+> dev session puts the app back at the root URL. The build script
+> doesn't pass it, so production builds keep the Pages base.
+
+If you'd rather not type `VITE_BASE=/` every time, add it to a
+`.env.local` (gitignored):
+
+```
+VITE_BASE=/
+```
 
 ### Behind a tunnel (cloudflared / ngrok / Cursor port-forward)
 
