@@ -6,6 +6,11 @@ import react from '@vitejs/plugin-react';
 // other hosts (e.g. Vercel/Netlify root deploys: VITE_BASE=/).
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': '/workspace/src',
+    },
+  },
   base: process.env.VITE_BASE ?? '/greensummerco/',
   server: {
     host: '0.0.0.0',

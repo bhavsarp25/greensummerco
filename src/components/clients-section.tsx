@@ -1,16 +1,20 @@
-import type { CSSProperties } from 'react';
 import { clients } from './client-data';
+import ParallaxImages from './ui/3d-parallax-effect-on-hover';
 
 interface ClientsSectionProps {
   onClientClick: (clientId: number) => void;
 }
 
 export function ClientsSection({ onClientClick }: ClientsSectionProps) {
-  const parallaxPresets = [
-    { f: 0.1, r: '10px' },
-    { f: 0.12, r: '5px' },
-    { f: 0.08, r: '20px' },
-  ] as const;
+  const featuredClients = clients.slice(0, 3).map((c, i) => ({
+    id: c.id,
+    src: c.logo,
+    alt: `${c.name} logo`,
+    f: [0.1, 0.12, 0.08][i] ?? 0.1,
+    r: ['10px', '5px', '20px'][i] ?? '10px',
+    title: c.name,
+    subtitle: c.industry,
+  }));
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -22,47 +26,12 @@ export function ClientsSection({ onClientClick }: ClientsSectionProps) {
         Click on any client to learn more about their success story.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-flow-col place-content-center gap-8 px-2 sm:px-0">
-        {clients.slice(0, 3).map((client, index) => {
-          const preset = parallaxPresets[index % parallaxPresets.length];
-          return (
-            <div key={client.id} className="flex flex-col items-center gap-3 text-center">
-              <button
-                type="button"
-                onClick={() => onClientClick(client.id)}
-                className="parallax-tile overflow-hidden"
-                style={
-                  {
-                    ['--f' as string]: preset.f,
-                    ['--r' as string]: preset.r,
-                  } as CSSProperties
-                }
-                onPointerMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-                  const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-                  e.currentTarget.style.setProperty('--mx', x.toFixed(3));
-                  e.currentTarget.style.setProperty('--my', y.toFixed(3));
-                }}
-                onPointerLeave={(e) => {
-                  e.currentTarget.style.setProperty('--mx', '0');
-                  e.currentTarget.style.setProperty('--my', '0');
-                }}
-              >
-                <img
-                  src={client.logo}
-                  alt={`${client.name} logo`}
-                  className="parallax-img"
-                />
-              </button>
-              <h3 className="text-xl text-[#688952] group-hover:underline">
-                {client.name}
-              </h3>
-              <p className="text-sm text-gray-500">{client.industry}</p>
-            </div>
-          );
-        })}
-      </div>
+      <ParallaxImages
+        images={featuredClients}
+        onImageClick={(id) => onClientClick(Number(id))}
+        className="p-0 bg-transparent min-h-0"
+        tileClassName="w-[230px] h-[230px] md:w-[280px] md:h-[280px]"
+      />
     </div>
   );
 }
