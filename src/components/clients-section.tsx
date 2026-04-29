@@ -26,29 +26,40 @@ export function ClientsSection({ onClientClick }: ClientsSectionProps) {
         {clients.slice(0, 3).map((client, index) => {
           const preset = parallaxPresets[index % parallaxPresets.length];
           return (
-            <button
-              key={client.id}
-              onClick={() => onClientClick(client.id)}
-              className="group flex flex-col items-center gap-3 text-center"
-            >
-              <div className="parallax-tile overflow-hidden">
+            <div key={client.id} className="flex flex-col items-center gap-3 text-center">
+              <button
+                type="button"
+                onClick={() => onClientClick(client.id)}
+                className="parallax-tile overflow-hidden"
+                style={
+                  {
+                    ['--f' as string]: preset.f,
+                    ['--r' as string]: preset.r,
+                  } as CSSProperties
+                }
+                onPointerMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+                  const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+                  e.currentTarget.style.setProperty('--mx', x.toFixed(3));
+                  e.currentTarget.style.setProperty('--my', y.toFixed(3));
+                }}
+                onPointerLeave={(e) => {
+                  e.currentTarget.style.setProperty('--mx', '0');
+                  e.currentTarget.style.setProperty('--my', '0');
+                }}
+              >
                 <img
                   src={client.logo}
                   alt={`${client.name} logo`}
-                  className="parallax-img h-[230px] w-[230px] object-cover"
-                  style={
-                    {
-                      ['--f' as string]: preset.f,
-                      ['--r' as string]: preset.r,
-                    } as CSSProperties
-                  }
+                  className="parallax-img"
                 />
-              </div>
+              </button>
               <h3 className="text-xl text-[#688952] group-hover:underline">
                 {client.name}
               </h3>
               <p className="text-sm text-gray-500">{client.industry}</p>
-            </button>
+            </div>
           );
         })}
       </div>
