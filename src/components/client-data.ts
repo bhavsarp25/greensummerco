@@ -29,14 +29,14 @@ export const clients: Client[] = [
     name: 'Shinobi Tech',
     logo: '/clients/shinobi-tech.jpeg',
     description:
-      'A performance-driven tech brand blending bold identity design with product-led storytelling, focused on scaling visibility in competitive digital markets.',
-    industry: 'Technology',
-    services: ['Brand Identity', 'Website Redesign', 'Video Creative', 'Performance Marketing'],
+      'A combat-sports performance brand focused on premium sports finger tape for BJJ, grappling, and training. Their positioning emphasizes comfort, durability, athlete-tested reliability, and bamboo-derived materials.',
+    industry: 'Sports Performance Equipment',
+    services: ['Product Positioning', 'E-commerce Optimization', 'Athlete-Creator Content', 'Performance Marketing'],
     results: [
-      'Stronger branded recall across social and landing pages',
-      'Increased qualified demo requests from ad traffic',
-      'Higher engagement rates on short-form campaign creatives',
-      'Improved funnel consistency from awareness to conversion',
+      'Clearer product messaging around athlete-tested performance and comfort',
+      'Higher conversion intent from product-page traffic',
+      'Stronger trust signals via founder/BJJ credibility storytelling',
+      'Improved content alignment across social, product, and checkout funnel',
     ],
   },
 ];
