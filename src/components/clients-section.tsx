@@ -6,12 +6,12 @@ interface ClientsSectionProps {
 }
 
 export function ClientsSection({ onClientClick }: ClientsSectionProps) {
-  const featuredClients = clients.slice(0, 3).map((c, i) => ({
+  const featuredClients = clients.slice(0, 2).map((c, i) => ({
     id: c.id,
     src: c.logo,
     alt: `${c.name} logo`,
-    f: [0.1, 0.12, 0.08][i] ?? 0.1,
-    r: ['10px', '5px', '20px'][i] ?? '10px',
+    f: [0.1, 0.12][i] ?? 0.1,
+    r: ['10px', '5px'][i] ?? '10px',
     title: c.name,
     subtitle: c.industry,
   }));

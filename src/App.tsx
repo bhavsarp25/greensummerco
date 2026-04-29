@@ -31,9 +31,25 @@ export default function App() {
     { id: 'contact', label: 'Contact' },
   ];
 
+  const openClient = (clientId: number) => {
+    setSelectedClient(clientId);
+    // Ensure detail page always starts at the top.
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  };
+
+  const backToClients = () => {
+    setSelectedClient(null);
+    // Wait one tick for the main page to render, then return to the
+    // clients section instead of jumping to site top.
+    setTimeout(() => {
+      const clientsEl = document.getElementById('clients');
+      clientsEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
+
   // If a client is selected, show the client detail page
   if (selectedClient !== null) {
-    return <ClientDetail clientId={selectedClient} onBack={() => setSelectedClient(null)} />;
+    return <ClientDetail clientId={selectedClient} onBack={backToClients} />;
   }
 
   const services = [
@@ -182,7 +198,7 @@ export default function App() {
       {/* Clients Section */}
       <section id="clients" className="py-24 px-6 bg-white">
         <Reveal from="up">
-          <ClientsSection onClientClick={(clientId) => setSelectedClient(clientId)} />
+          <ClientsSection onClientClick={openClient} />
         </Reveal>
       </section>
 
