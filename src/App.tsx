@@ -69,12 +69,10 @@ export default function App() {
         fadeInAfterSelector="#landing"
       />
 
-      {/* Decorative vines that grow on both sides of the page, anchored
-          to the bottom-inside corners of the LeafCorners foliage above
-          the GROW BOLDLY section. Drawing starts as the user scrolls
-          PAST GROW BOLDLY (#hero) and is fully drawn by the time they
-          reach the contact section at the bottom of the page, so the
-          vines accompany the user through the rest of the site. */}
+      {/* Decorative vines — animation begins when the hero (second page,
+          #hero) reaches the top of the viewport; fully grown by contact.
+          Range uses document layout (not offsetTop) so vines do not start
+          on the 3D landing. */}
       <GrowingVine startSelector="#hero" endSelector="#contact" />
 
       {/* Page 1: Landing — interactive 3D logo, full viewport, scroll-down hint */}

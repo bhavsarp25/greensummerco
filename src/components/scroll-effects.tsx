@@ -268,6 +268,18 @@ export function GrowingVine({
       setRange({ start, end });
       return;
     }
+    /**
+     * Document Y of an element's top / bottom edge. Do not use `offsetTop`
+     * here: for nested sections (e.g. #hero inside a relative wrapper) it
+     * is relative to the offset parent, not the document, which makes the
+     * vine start animating while the user is still on the landing page.
+     */
+    function layoutTop(el: HTMLElement): number {
+      return el.getBoundingClientRect().top + window.scrollY;
+    }
+    function layoutBottom(el: HTMLElement): number {
+      return el.getBoundingClientRect().bottom + window.scrollY;
+    }
     function recompute() {
       const docHeight =
         document.documentElement.scrollHeight - window.innerHeight;
@@ -279,14 +291,18 @@ export function GrowingVine({
       let e = end;
       if (startSelector) {
         const el = document.querySelector(startSelector) as HTMLElement | null;
-        if (el) s = el.offsetTop / docHeight;
+        if (el) {
+          // Begin the vine when the hero (#second page) reaches the top of
+          // the viewport — i.e. document scroll matches the hero's top.
+          s = layoutTop(el) / docHeight;
+        }
       }
       if (endSelector) {
         const el = document.querySelector(endSelector) as HTMLElement | null;
         if (el) {
-          // 100% drawn when the bottom of the end element has scrolled
-          // past the top of the viewport.
-          e = (el.offsetTop + el.offsetHeight - window.innerHeight) / docHeight;
+          // Fully grown when the bottom of the end section meets the bottom
+          // of the viewport (user has scrolled through the main content).
+          e = (layoutBottom(el) - window.innerHeight) / docHeight;
         }
       }
       // Sanity: clamp and keep at least a 0.05 gap between start/end.
@@ -298,8 +314,10 @@ export function GrowingVine({
     window.addEventListener('resize', recompute, { passive: true });
     // Layout settles after fonts / images load.
     const t = setTimeout(recompute, 200);
+    const t2 = setTimeout(recompute, 800);
     return () => {
       clearTimeout(t);
+      clearTimeout(t2);
       window.removeEventListener('resize', recompute);
     };
   }, [startSelector, endSelector, start, end]);
@@ -655,6 +673,8 @@ export function LeafCorners({ sectionRef }: LeafCornersProps) {
   const [leftSrc, setLeftSrc] = useState<string | null>(null);
   const [rightSrc, setRightSrc] = useState<string | null>(null);
 
+  const { scrollY } = useScroll();
+
   useEffect(() => {
     let cancelled = false;
     async function probe(candidates: string[]): Promise<string | null> {
@@ -696,7 +716,22 @@ export function LeafCorners({ sectionRef }: LeafCornersProps) {
     target: sectionRef,
     offset: ['start end', 'center center'],
   });
-  const opacity = useTransform(scrollYProgress, [0.0, 0.6], [0, 1]);
+  // Do not show corner foliage on the first (landing) page: #hero sits
+  // inside a wrapper, so its layout top was wrong for global scroll.
+  // Gate on the landing block's bottom leaving the viewport.
+  const pageTwoGate = useTransform(scrollY, (sy) => {
+    const landing = document.querySelector('#landing');
+    if (!(landing instanceof HTMLElement)) return 0;
+    const vh = window.innerHeight;
+    const landingBottomDoc = sy + landing.getBoundingClientRect().bottom;
+    const heroStartsWhen = landingBottomDoc - vh;
+    if (sy < heroStartsWhen) return 0;
+    return Math.min(1, (sy - heroStartsWhen) / Math.max(1, vh * 0.35));
+  });
+  const opacityRaw = useTransform(scrollYProgress, [0.0, 0.6], [0, 1]);
+  const opacity = useTransform([opacityRaw, pageTwoGate], ([a, g]) =>
+    Number(a) * Number(g),
+  );
   const yLeft = useTransform(scrollYProgress, [0.0, 0.6], [-32, 0]);
   const yRight = useTransform(scrollYProgress, [0.0, 0.6], [-32, 0]);
   const scaleLeft = useTransform(scrollYProgress, [0.0, 0.7], [0.92, 1]);
