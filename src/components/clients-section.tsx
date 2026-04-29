@@ -7,9 +7,9 @@ interface ClientsSectionProps {
 
 export function ClientsSection({ onClientClick }: ClientsSectionProps) {
   const parallaxPresets = [
-    { f: 0.1, r: '16px' },
-    { f: 0.12, r: '10px' },
-    { f: 0.08, r: '22px' },
+    { f: 0.1, r: '10px' },
+    { f: 0.12, r: '5px' },
+    { f: 0.08, r: '20px' },
   ] as const;
 
   return (
@@ -22,40 +22,33 @@ export function ClientsSection({ onClientClick }: ClientsSectionProps) {
         Click on any client to learn more about their success story.
       </p>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 place-content-center gap-8 px-2 sm:px-0">
         {clients.map((client, index) => {
           const preset = parallaxPresets[index % parallaxPresets.length];
           return (
-          <button
-            key={client.id}
-            onClick={() => onClientClick(client.id)}
-            className="group flex flex-col items-center p-6 bg-white rounded-lg border-2 border-[#D8CDB1] hover:border-[#688952] transition-all hover:shadow-lg transform hover:-translate-y-1"
-          >
-            <div
-              className="parallax-frame w-32 h-32 mb-4 overflow-hidden bg-gray-100"
-              style={
-                {
-                  ['--r' as string]: preset.r,
-                } as CSSProperties
-              }
+            <button
+              key={client.id}
+              onClick={() => onClientClick(client.id)}
+              className="parallax-card group flex flex-col items-center gap-3 text-center transition-transform duration-300 hover:-translate-y-1"
             >
-              <img
-                src={client.logo}
-                alt={`${client.name} logo`}
-                className="parallax-img w-full h-full object-cover"
-                style={
-                  {
-                    ['--f' as string]: preset.f,
-                    ['--r' as string]: preset.r,
-                  } as CSSProperties
-                }
-              />
-            </div>
-            <h3 className="text-xl text-[#688952] text-center group-hover:underline">
-              {client.name}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">{client.industry}</p>
-          </button>
+              <div className="overflow-hidden">
+                <img
+                  src={client.logo}
+                  alt={`${client.name} logo`}
+                  className="parallax-img h-[230px] w-[230px] object-cover"
+                  style={
+                    {
+                      ['--f' as string]: preset.f,
+                      ['--r' as string]: preset.r,
+                    } as CSSProperties
+                  }
+                />
+              </div>
+              <h3 className="text-xl text-[#688952] group-hover:underline">
+                {client.name}
+              </h3>
+              <p className="text-sm text-gray-500">{client.industry}</p>
+            </button>
           );
         })}
       </div>
