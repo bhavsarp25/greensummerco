@@ -30,7 +30,7 @@ export function ClientsSection({ onClientClick }: ClientsSectionProps) {
         images={featuredClients}
         onImageClick={(id) => onClientClick(Number(id))}
         className="p-0 bg-transparent min-h-0 w-full !grid-cols-1 sm:!grid-cols-2 !grid-flow-row !place-content-stretch place-items-center"
-        tileClassName="w-[240px] h-[240px] sm:w-[280px] sm:h-[280px]"
+        tileClassName="w-[210px] h-[210px] sm:w-[260px] sm:h-[260px] md:w-[280px] md:h-[280px]"
       />
     </div>
   );

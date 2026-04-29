@@ -50,6 +50,18 @@ export function LiquidGlassMenu({
   fadeInAfterSelector = '#landing',
 }: LiquidGlassMenuProps) {
   const [open, setOpen] = useState(false);
+  const isTouchDevice =
+    typeof window !== 'undefined' &&
+    ('ontouchstart' in window ||
+      (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0));
+
+  const triggerHaptic = useCallback((ms: number) => {
+    if (typeof navigator === 'undefined') return;
+    const nav = navigator as Navigator & {
+      vibrate?: (pattern: number | number[]) => boolean;
+    };
+    nav.vibrate?.(ms);
+  }, []);
 
   // Drive the menu's appearance off document scroll progress, mapped so
   // the menu is invisible while the user is on the landing page (3D
@@ -101,10 +113,11 @@ export function LiquidGlassMenu({
   // Close after navigation.
   const handleSelect = useCallback(
     (id: string) => {
+      if (isTouchDevice) triggerHaptic(10);
       setOpen(false);
       onNavigate(id);
     },
-    [onNavigate],
+    [isTouchDevice, onNavigate, triggerHaptic],
   );
 
   return (
@@ -117,7 +130,10 @@ export function LiquidGlassMenu({
 
       <LiquidGlassPill
         ariaLabel={open ? 'Close menu' : 'Open menu'}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (isTouchDevice) triggerHaptic(16);
+          setOpen((v) => !v);
+        }}
         active={open}
       >
         <span className="flex items-center gap-2 text-[#3d5230]">
@@ -218,6 +234,7 @@ function LiquidGlassPill({
       className={cn(
         'relative inline-flex items-center justify-center cursor-pointer',
         'h-12 px-5 rounded-full transition-transform duration-300 will-change-transform',
+        'ring-1 ring-[#3d5230]/25 md:ring-0',
         'hover:scale-[1.04] active:scale-[0.98]',
       )}
     >

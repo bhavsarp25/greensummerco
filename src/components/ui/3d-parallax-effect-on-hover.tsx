@@ -23,6 +23,12 @@ export default function ParallaxImages({
   tileClassName = '',
   onImageClick,
 }: ParallaxImagesProps) {
+  const hapticTap = () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+  };
+
   return (
     <div
       className={`grid grid-cols-1 sm:grid-cols-2 place-content-center justify-items-center gap-6 md:gap-8 p-0 ${className}`.trim()}
@@ -38,7 +44,10 @@ export default function ParallaxImages({
               ['--r' as string]: img.r,
             } as CSSProperties
           }
-          onClick={() => onImageClick?.(img.id ?? idx)}
+          onClick={() => {
+            hapticTap();
+            onImageClick?.(img.id ?? idx);
+          }}
           onPointerMove={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width - 0.5) * 18;

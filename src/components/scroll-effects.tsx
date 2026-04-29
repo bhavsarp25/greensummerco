@@ -69,14 +69,14 @@ export function ConvergingHeadline({
     >
       {eyebrow && (
         <motion.div
-          className="flex items-center gap-2 sm:gap-3 mb-7 sm:mb-8 text-[#557042] px-2"
+          className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8 text-[#557042] px-2"
           style={{ opacity: eyebrowOpacity, y: eyebrowY }}
         >
           <motion.span
             className="block h-px bg-[#557042] origin-left"
             style={{ width: 56, scaleX: tendrilScale }}
           />
-          <span className="font-brand-force text-[1.5rem] sm:text-xl md:text-2xl text-[#3f5232] font-normal tracking-normal text-center max-w-[70vw] sm:max-w-[90vw] leading-tight">
+          <span className="font-brand-force text-[clamp(1.05rem,4.4vw,1.35rem)] sm:text-xl md:text-2xl text-[#3f5232] font-normal tracking-normal text-center max-w-[72vw] sm:max-w-[90vw] leading-tight">
             {eyebrow}
           </span>
           <motion.span
@@ -98,7 +98,7 @@ export function ConvergingHeadline({
           return (
             <span
               key={lineIdx}
-              className={`block ${colorClass} text-[clamp(2.55rem,8.6vw,4.6rem)] md:text-7xl lg:text-8xl whitespace-nowrap`}
+              className={`block ${colorClass} text-[clamp(1.9rem,11vw,3.9rem)] md:text-7xl lg:text-8xl whitespace-nowrap`}
             >
               {chars.map((c, i) => (
                 <ConvergingChar
@@ -116,7 +116,7 @@ export function ConvergingHeadline({
 
       {subtitle && (
         <motion.p
-          className="font-brand-force text-[#4a4a48] text-center max-w-2xl text-[1.9rem] sm:text-3xl md:text-3xl mt-7 sm:mt-8 font-normal leading-tight"
+          className="font-brand-force text-[#4a4a48] text-center max-w-2xl text-[clamp(1.15rem,6.4vw,1.85rem)] sm:text-3xl md:text-3xl mt-6 sm:mt-8 font-normal leading-tight"
           style={{ opacity: subtitleOpacity, y: subtitleY }}
         >
           {subtitle}
